@@ -5,7 +5,7 @@ import "./DashboardLayout.scss";
 import AddSplit from "../components/AddSplit/AddSplit";
 import Expenses from "../components/Expenses/Expenses";
 import ExpenseList from "../components/ExpenseList/expenseList";
-import NewGroup from "../components/Groups/GroupsForm/newGroup";
+import NewGroup from "../components/Groups/GroupsForm/NewGroup";
 
 const DashboardLayout = () => {
   const [activeComponent, setActiveComponent] = useState("AddSplit");
