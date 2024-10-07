@@ -1,0 +1,87 @@
+.signup {
+  display: flex;
+  padding-right: 20px;
+  gap: 20px;
+  @media (max-width: 1000px) {
+    padding-right: 0;
+    flex-direction: column;
+  }
+  &__section {
+    align-items: center;
+    justify-content: center;
+    flex-basis: 40%;
+    gap: 15px;
+    display: flex;
+    flex-direction: column;
+    .input {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .links {
+      justify-content: space-between;
+      width: 400px;
+      display: flex;
+      gap: 50px;
+      @media (max-width: 550px) {
+        width: 300px;
+      }
+    }
+    .secure img {
+      margin-top: 100px;
+      width: 400px;
+      @media (max-width: 550px) {
+        width: 300px;
+      }
+    }
+    h3 {
+      font-size: 28px;
+      font-weight: 600;
+    }
+    input {
+      border-radius: 5px;
+      padding: 5px;
+      width: 400px;
+      height: 35px;
+      border: 1px solid black;
+      @media (max-width: 550px) {
+        width: 300px;
+      }
+    }
+
+    button {
+      margin-top: 5px;
+      color: white;
+      background-color: rgb(57, 23, 57);
+      width: 400px;
+      height: 40px;
+      border-radius: 5px;
+      @media (max-width: 550px) {
+        width: 300px;
+      }
+    }
+  }
+
+  &__image {
+    flex-basis: 60%;
+    height: 100%;
+    img {
+      border-radius: 0px 250px 250px 0px;
+      @media (max-width: 1000px) {
+        border-radius: 0;
+        height: 500px;
+        width: 100%;
+        object-fit: cover;
+        border-radius: 0px 0px 100px 100px;
+      }
+      @media (max-width: 550px) {
+        border-radius: 0;
+        height: 350px;
+        width: 100%;
+        object-fit: cover;
+        border-radius: 0px 0px 100px 100px;
+      }
+    }
+  }
+}

@@ -1,0 +1,168 @@
+.newGroup {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  flex-direction: column;
+  align-items: center;
+  margin: 20px 20px;
+  @media (max-width: 850px) {
+    width: auto;
+    margin: 20px 0;
+  }
+
+  &__header {
+    display: flex;
+    width: 100%;
+    align-items: center;
+    padding: 10px 20px;
+    border-radius: 15px;
+    color: white;
+    height: 80px;
+    font-size: 20px;
+    justify-content: space-between;
+    background-color: rgb(86 45 86);
+  }
+
+  .form__container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    @media (max-width: 1000px) {
+      flex-direction: column-reverse;
+    }
+  }
+  &__form {
+    width: 500px;
+    display: flex;
+    flex-direction: column;
+    margin-top: 20px;
+    padding: 20px;
+    @media (max-width: 850px) {
+      margin-left: 70px;
+    }
+    @media (max-width: 500px) {
+      width: 350px;
+      margin-left: 40px;
+      padding: 10px 5px;
+    }
+    .title {
+      font-size: 22px;
+    }
+
+    .formInput {
+      margin-top: 10px;
+      display: flex;
+      flex-direction: column;
+      label {
+        margin-bottom: 5px;
+      }
+      input,
+      select {
+        border-radius: 5px;
+        padding: 5px;
+        width: 400px;
+        height: 35px;
+        border: 1px solid black;
+        @media (max-width: 500px) {
+          width: 300px;
+        }
+      }
+    }
+
+    .uploadInput {
+      margin-top: 20px;
+      display: flex;
+      flex-direction: column;
+
+      .custom-file-upload {
+        width: 400px;
+        display: inline-block;
+        padding: 10px 20px;
+        font-size: 16px;
+        color: white;
+        background-color: rgb(86 45 86);
+        border-radius: 8px;
+        cursor: pointer;
+        text-align: center;
+        transition: background-color 0.3s ease;
+        @media (max-width: 500px) {
+          width: 300px;
+        }
+      }
+
+      input {
+        display: none;
+      }
+    }
+
+    .membersInput {
+      display: flex;
+      flex-direction: column;
+      margin-top: 10px;
+      label {
+        margin-bottom: 5px;
+      }
+      input {
+        border-radius: 5px;
+        padding: 5px;
+        width: 400px;
+        height: 35px;
+        border: 1px solid black;
+        margin-bottom: 10px;
+        @media (max-width: 500px) {
+          width: 300px;
+        }
+      }
+
+      .remove {
+        margin-left: 5px;
+        color: white;
+        height: 30px;
+        width: 30px;
+        border-radius: 5px;
+        font-size: 20px;
+        background-color: black;
+      }
+
+      .addMember {
+        height: 35px;
+        width: 400px;
+        border-radius: 5px;
+        font-weight: 500;
+        color: rgb(86 45 86);
+        border: 2px solid rgb(86 45 86);
+        @media (max-width: 500px) {
+          width: 300px;
+        }
+      }
+    }
+
+    .submit {
+      margin-top: 10px;
+      height: 45px;
+      width: 400px;
+      border-radius: 5px;
+      font-weight: 500;
+      color: white;
+      background-color: rgb(86 45 86);
+      @media (max-width: 500px) {
+        width: 300px;
+      }
+    }
+  }
+
+  img {
+    height: 500px;
+    width: 650px;
+
+    @media (max-width: 1150px) {
+      height: 400px;
+      width: 550px;
+    }
+    @media (max-width: 500px) {
+      height: 270px;
+      width: 400px;
+    }
+  }
+}

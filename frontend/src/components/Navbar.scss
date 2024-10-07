@@ -1,0 +1,154 @@
+.navbar {
+  display: flex;
+  padding: 10px 50px;
+  @media (max-width: 850px) {
+    padding: 10px 25px;
+  }
+  &__logo {
+    flex: 1;
+    img {
+      height: 40px;
+    }
+  }
+
+  &__links {
+    display: flex;
+    flex: 2;
+    align-items: center;
+    justify-content: center;
+    @media (max-width: 1080px) {
+      flex: 3;
+    }
+    @media (max-width: 850px) {
+      display: none;
+    }
+
+    ul {
+      align-items: center;
+      justify-content: center;
+      display: flex;
+      flex-direction: row;
+      gap: 30px;
+      font-size: 22px;
+      font-weight: 500;
+      @media (max-width: 1080px) {
+        gap: 15px;
+      }
+    }
+  }
+
+  &__login {
+    display: flex;
+    flex: 1;
+    align-items: center;
+    justify-content: flex-end;
+
+    @media (max-width: 850px) {
+      display: none;
+    }
+
+    button {
+      height: 40px;
+      width: 100px;
+      color: white;
+      border-radius: 5px;
+      font-size: 18px;
+      background-color: rgb(69, 28, 69);
+    }
+  }
+}
+
+.stylish-border {
+  position: relative;
+  padding-bottom: 20px;
+}
+
+.stylish-border::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(to right, transparent, black, transparent);
+  border-radius: 0 0 15px 15px;
+}
+
+.side-menu {
+  height: 100%;
+  width: 0;
+  position: fixed;
+  top: 0;
+  left: 0;
+  background-color: #2b1632;
+  overflow-x: hidden;
+  transition: width 0.3s ease-in-out;
+  padding-top: 60px;
+  z-index: 9999;
+}
+
+.side-menu .title {
+  margin-left: 20px;
+  font-weight: 600;
+  margin-bottom: 40px;
+  font-size: 25px;
+  color: rgb(255, 211, 255);
+}
+
+.side-menu ul {
+  margin-left: 20px;
+  list-style-type: none;
+  padding: 0;
+}
+
+.side-menu li {
+  color: white;
+  display: flex;
+  align-items: center;
+  .icon {
+    font-size: 25px;
+    color: rgb(250, 64, 64);
+  }
+  .home {
+    color: rgb(0, 202, 0);
+  }
+  .about {
+    color: rgb(182, 8, 182);
+  }
+  .contact {
+    color: skyblue;
+  }
+  .logout {
+    color: rgb(2, 176, 107);
+  }
+  .dash {
+    color: rgb(199, 199, 3);
+  }
+}
+
+.side-menu a {
+  padding: 10px 15px;
+  font-size: 20px;
+  display: block;
+  transition: 0.3s;
+}
+
+.menu-icon {
+  font-size: 30px;
+  cursor: pointer;
+  display: none;
+}
+
+@media (max-width: 850px) {
+  .menu-icon {
+    display: block;
+  }
+
+  .side-menu.open {
+    width: 300px;
+  }
+
+  .side-menu.closed {
+    width: 0;
+  }
+}

@@ -1,0 +1,106 @@
+.expense {
+    flex:1;
+    margin: 20px 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    &__img {
+        h1 {
+            font-size: 2rem;
+            color: rgb(86 45 86);
+            font-weight: 600;
+            text-align: center;
+        }
+    }
+    &__img img {
+        height: 400px;
+        width: 700px;
+        @media (max-width: 1250px){
+            margin-top: 20px;
+            height: 350px;
+            width: 600px;
+        }
+        @media (max-width: 550px) {
+            margin-top: 20px;
+            height: 250px;
+            width: 400px;
+        }
+    }
+
+    &__container {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        @media (max-width:1150px) {
+            flex-direction: column-reverse;
+            
+        }
+
+    }
+   
+    
+    &__header {
+       display: flex;
+       width: 100%;
+       align-items: center;
+       padding: 10px 20px;
+        border-radius: 15px;
+        color:white;
+        height: 80px;
+        font-size: 20px;
+        justify-content: space-between;
+        background-color: rgb(86 45 86);
+    }
+
+    &__form {
+        padding:20px;
+        margin: 20px 10px;
+        background-color: #f9f9f9;
+        border-radius: 10px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+
+        &__inputs {
+            label {
+                display: block;
+                width: 400px;
+                @media (max-width: 500px) {
+                    width: 300px;
+                }
+            }
+            input ,select {
+                padding: 5px;
+                margin: 5px 0px ;
+                width: 400px;
+                height: 40px;
+                width: 100%;
+                border: 1px solid black;
+                border-radius: 5px;
+                @media (max-width: 500px) {
+                    width: 300px;
+                }
+            }
+        }
+    }
+
+    .submitButton {
+        margin-top: 10px;
+        height: 45px;
+        width: 400px;
+        border-radius: 5px;
+        font-weight: 500;
+        color: white;
+        background-color: rgb(86 45 86);
+        @media (max-width: 500px) {
+            width: 300px;
+        }
+    }
+}
+.select__control {
+    margin: 5px 0px;
+    border: 1px solid black !important;
+}
+.select__input-container {
+    padding-top: 0px !important;
+    margin: 0  !important;
+}
+

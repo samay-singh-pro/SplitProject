@@ -1,0 +1,175 @@
+.offerings {
+  padding: 50px 20px;
+  text-align: center;
+
+  &__title {
+    font-size: 3.5rem;
+    color: rgb(110, 26, 110);
+    margin-bottom: 40px;
+    font-weight: 600;
+  }
+
+  &__devices {
+    display: flex;
+    flex-direction: column;
+    h2 {
+      font-size: 2rem;
+      font-weight: 500;
+    }
+
+    .images {
+      margin: 30px 20px;
+      font-size: 25px;
+      font-weight: 500;
+      color: purple;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      @media (max-width: 850px) {
+        flex-direction: column;
+      }
+      .device {
+        img {
+          width: 500px;
+          @media (max-width: 850px) {
+          }
+        }
+      }
+    }
+  }
+  &__reports {
+    display: flex;
+    gap: 30px;
+    margin: 20px 30px;
+    @media (max-width: 850px) {
+      flex-direction: column;
+    }
+    .description {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      flex: 1;
+      text-align: center;
+      padding: 20px;
+      h1 {
+        font-size: 2.5rem;
+        font-weight: 500;
+      }
+      h3 {
+        font-size: 1.25rem;
+        font-weight: 300;
+      }
+    }
+    .image {
+      display: flex;
+      flex: 1;
+      justify-content: center;
+      img {
+        max-width: 800px;
+      }
+    }
+  }
+  .collage {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 40px;
+    padding: 50px 0;
+    position: relative;
+
+    &__item {
+      border-radius: 50%;
+      overflow: hidden;
+      border: 4px solid #fff;
+      box-shadow: 0px 6px 20px rgba(0, 0, 0, 0.15);
+      transition: transform 0.3s ease-in-out;
+      position: relative;
+
+      img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+
+      &:hover {
+        transform: scale(1.1);
+      }
+    }
+
+    &__item--large {
+      width: 300px;
+      height: 300px;
+    }
+
+    &__item--medium {
+      width: 250px;
+      height: 250px;
+      transform: translate(20px, 40px);
+    }
+
+    &__item--small {
+      width: 200px;
+      height: 200px;
+      transform: translate(-20px, -30px);
+    }
+
+    @media (max-width: 768px) {
+      gap: 30px;
+
+      &__item--large {
+        width: 250px;
+        height: 250px;
+      }
+
+      &__item--medium {
+        width: 200px;
+        height: 200px;
+        transform: translate(10px, 20px);
+      }
+
+      &__item--small {
+        width: 150px;
+        height: 150px;
+        transform: translate(-10px, -20px);
+      }
+    }
+
+    @media (max-width: 480px) {
+      flex-direction: column;
+      gap: 20px;
+
+      &__item {
+        margin: 0 auto;
+      }
+
+      &__item--large {
+        width: 220px;
+        height: 220px;
+      }
+
+      &__item--medium {
+        width: 180px;
+        height: 180px;
+        transform: none;
+      }
+
+      &__item--small {
+        width: 140px;
+        height: 140px;
+        transform: none;
+      }
+    }
+  }
+  .collage_title {
+    p {
+      font-size: 2.5rem;
+      font-weight: 500;
+    }
+    h2 {
+      font-size: 1.5rem;
+      font-weight: 300;
+    }
+  }
+}

@@ -1,0 +1,7 @@
+@media (max-width: 768px) {
+    .Toastify__toast-container {
+      width: 90% !important;
+      left: 5% !important;  
+      right: 5% !important; 
+    }
+  }

@@ -1,0 +1,107 @@
+.expense-card {
+  background: #f6f4e8;;
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+  margin: 20px 0;
+  max-width: 450px;
+  font-family: 'Poppins', sans-serif;
+  transition: transform 0.3s ease-in-out, box-shadow 0.3s ease;
+
+  &:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+  }
+
+  .expense-header {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+
+    .expense-info {
+      display: flex;
+      flex-direction: column;
+
+      .description {
+        font-size: 1.6rem;
+        font-weight: 600;
+        color: #2d4059;
+      }
+
+      .category {
+        font-size: 1rem;
+        color: #76c7c0;
+        background: #e0f7fa;
+        padding: 4px 8px;
+        border-radius: 8px;
+        margin-top: 5px;
+      }
+    }
+
+    .expense-amount {
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: #ff6f61;
+      background: #ffe0e0;
+      padding: 8px 15px;
+      border-radius: 12px;
+    }
+  }
+
+  .expense-body {
+    .spender-info {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.9rem;
+      margin-bottom: 20px;
+      color: #707070;
+
+      .date-time {
+        font-size: 0.8rem;
+        color: #999999;
+      }
+    }
+
+    .split-details {
+      min-height: 220px;
+      background-color: #f7f7f7;
+      padding: 12px;
+      border-radius: 10px;
+
+      h4 {
+        font-size: 1.1rem;
+        margin-bottom: 10px;
+        color: #333;
+      }
+
+      ul {
+        list-style-type: none;
+        padding: 0;
+        margin: 0;
+
+        li {
+          display: flex;
+          justify-content: space-between;
+          margin-bottom: 8px;
+
+          &:last-child {
+            margin-bottom: 0;
+          }
+
+          .member-name {
+            color: #2d4059;
+            font-weight: 500;
+          }
+
+          .share-amount {
+            font-weight: 600;
+            color: #4caf50;
+          }
+        }
+      }
+    }
+  }
+}

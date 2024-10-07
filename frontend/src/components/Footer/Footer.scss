@@ -1,0 +1,38 @@
+.footer {
+  background-color: rgb(51, 18, 51);
+  color: white;
+  padding: 30px 150px;
+  display: flex;
+  gap: 30px;
+  justify-content: center;
+  flex-direction: row;
+  @media (max-width: 780px) {
+    padding: 30px 10px;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+  }
+  &__logo {
+    flex-basis: 30%;
+    img {
+      height: 50px;
+      width: 150px;
+    }
+  }
+  .links {
+    display: flex;
+    flex-direction: column;
+    .social-media {
+      display: flex;
+      font-size: 28px;
+      justify-content: center;
+      align-items: center;
+      gap: 50px;
+    }
+    .navs ul {
+      gap: 10px;
+      display: flex;
+      flex-direction: row;
+    }
+  }
+}
