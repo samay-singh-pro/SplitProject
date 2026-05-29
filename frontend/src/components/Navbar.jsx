@@ -14,6 +14,7 @@ import {
 import { Link, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { logout, logoutUser } from "../store/loginSlice";
+import ThemeToggle from "./ThemeToggle/ThemeToggle";
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -54,14 +55,17 @@ const Navbar = () => {
             </li>
           </ul>
         </div>
-        <div className="navbar__login">
-          {isAuthenticated ? (
-            <button onClick={handleLogout}>Logout</button>
-          ) : (
-            <button>
-              <Link to="/login">Login</Link>
-            </button>
-          )}
+        <div className="navbar__actions">
+          <ThemeToggle />
+          <div className="navbar__login">
+            {isAuthenticated ? (
+              <button onClick={handleLogout}>Logout</button>
+            ) : (
+              <button>
+                <Link to="/login">Login</Link>
+              </button>
+            )}
+          </div>
         </div>
         <div className="menu-icon" onClick={toggleMenu}>
           {!isOpen ? <div>&#9776;</div> : <div>&#10006;</div>}

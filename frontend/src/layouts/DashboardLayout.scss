@@ -1,7 +1,22 @@
 .dashboard {
   display: flex;
+  align-items: flex-start;
+  min-height: 100vh;
+
+  &__main {
+    flex: 1;
+    min-width: 0;
+  }
+
+  // Mobile / tablet: the SideNav is a fixed bottom tab bar, so the
+  // dashboard collapses to a single column and we reserve space at the
+  // bottom of the main content so the tab bar never covers content.
   @media (max-width: 850px) {
-    margin: 20px;
     flex-direction: column;
+
+    &__main {
+      width: 100%;
+      padding-bottom: calc(76px + env(safe-area-inset-bottom, 0px));
+    }
   }
 }

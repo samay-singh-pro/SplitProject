@@ -1,38 +1,63 @@
-import React from "react";
 import "./SideNav.scss";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
-  faUsers,
-  faReceipt,
-  faList,
-  faCog,
-  faPlus,
-} from "@fortawesome/free-solid-svg-icons";
+  FaPlus,
+  FaUsers,
+  FaReceipt,
+  FaChartBar,
+  FaListUl,
+} from "react-icons/fa";
 
-const SideNav = ({ onNavClick }) => {
+const NAV_ITEMS = [
+  { key: "AddGroup", label: "Add Group", short: "New", icon: <FaPlus /> },
+  { key: "Groups", label: "Groups", short: "Groups", icon: <FaUsers /> },
+  { key: "AddSplit", label: "Add Split", short: "Add", icon: <FaReceipt /> },
+  {
+    key: "ViewSplits",
+    label: "View Reports",
+    short: "Reports",
+    icon: <FaChartBar />,
+  },
+  {
+    key: "ExpenseList",
+    label: "Expense List",
+    short: "List",
+    icon: <FaListUl />,
+  },
+];
+
+const SideNav = ({ onNavClick, active }) => {
   return (
-    <div className="nav-card">
-      <div className="nav-item" onClick={() => onNavClick("AddGroup")}>
-        <FontAwesomeIcon icon={faPlus} />
-        <span className="nav-label">Add Group</span>
+    <aside className="sideNav" aria-label="Primary navigation">
+      <div className="sideNav__brand">
+        <span className="sideNav__label">Menu</span>
       </div>
-      <div className="nav-item" onClick={() => onNavClick("Groups")}>
-        <FontAwesomeIcon icon={faUsers} />
-        <span className="nav-label">Groups</span>
-      </div>
-      <div className="nav-item" onClick={() => onNavClick("AddSplit")}>
-        <FontAwesomeIcon icon={faReceipt} /> <FontAwesomeIcon icon={faPlus} />
-        <span className="nav-label">Add Split</span>
-      </div>
-      <div className="nav-item" onClick={() => onNavClick("ViewSplits")}>
-        <FontAwesomeIcon icon={faList} />
-        <span className="nav-label">View Reports</span>
-      </div>
-      <div className="nav-item" onClick={() => onNavClick("ExpenseList")}>
-        <FontAwesomeIcon icon={faCog} />
-        <span className="nav-label">Expense List</span>
-      </div>
-    </div>
+
+      <nav className="sideNav__list">
+        {NAV_ITEMS.map((item) => {
+          const isActive = active === item.key;
+          return (
+            <button
+              type="button"
+              key={item.key}
+              className={`sideNav__item ${
+                isActive ? "sideNav__item--active" : ""
+              }`}
+              onClick={() => onNavClick(item.key)}
+              aria-current={isActive ? "page" : undefined}
+            >
+              <span className="sideNav__icon">{item.icon}</span>
+              <span className="sideNav__text sideNav__text--long">
+                {item.label}
+              </span>
+              <span className="sideNav__text sideNav__text--short">
+                {item.short}
+              </span>
+              {isActive && <span className="sideNav__indicator" aria-hidden />}
+            </button>
+          );
+        })}
+      </nav>
+    </aside>
   );
 };
 

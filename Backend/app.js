@@ -16,7 +16,7 @@ config({ path: "./config/config.env" });
 app.use(
   cors({
     origin: "*",
-    methods: ["GET", "PUT", "POST", "DELETE"],
+    methods: ["GET", "PUT", "POST", "PATCH", "DELETE", "OPTIONS"],
     credentials: true,
   })
 );

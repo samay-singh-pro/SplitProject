@@ -15,18 +15,18 @@
 
     h1 {
       font-size: 2.5rem;
-      color: rgb(110, 26, 110);
+      color: var(--brand-primary);
       margin-bottom: 15px;
     }
 
     p {
       font-size: 1.2rem;
-      color: #555;
+      color: var(--text-secondary);
       margin-bottom: 20px;
     }
 
     .button {
-      background-color: rgb(79, 31, 79);
+      background-color: var(--brand-secondary);
       color: white;
       padding: 10px 20px;
       border: none;
@@ -36,7 +36,7 @@
       transition: background-color 0.3s ease;
 
       &:hover {
-        background-color: #881c88;
+        background-color: var(--brand-hover);
       }
     }
   }
@@ -82,7 +82,7 @@
     h2 {
       font-size: clamp(25px, 3vw, 55px);
       font-weight: 700;
-      color: rgb(110, 26, 110);
+      color: var(--brand-primary);
     }
 
     &__logos {
@@ -91,13 +91,13 @@
       padding: 20px;
 
       .aero {
-        color: rgb(85, 193, 85);
+        color: var(--accent-green);
       }
       .home {
-        color: rgb(192, 75, 192);
+        color: var(--accent-pink);
       }
       .heart {
-        color: rgb(250, 94, 94);
+        color: var(--accent-red);
       }
       .star {
         color: rgb(80, 210, 236);
@@ -106,24 +106,36 @@
 
     &__buttons {
       .primary {
-        background-color: rgb(79, 31, 79);
+        background-color: var(--brand-secondary);
         color: white;
         height: 45px;
         width: 110px;
         border-radius: 5px;
         padding: 5px 5px;
         font-size: 22px;
+        transition: background-color 0.3s ease;
+        
+        &:hover {
+          background-color: var(--brand-hover);
+        }
       }
       .secondary {
         margin-left: 30px;
-        color: rgb(79, 31, 79);
-        border: 3px solid rgb(79, 31, 79);
+        color: var(--brand-secondary);
+        background-color: transparent;
+        border: 3px solid var(--brand-secondary);
         font-size: 22px;
         font-weight: 600;
         border-radius: 5px;
         padding: 5px 5px;
         width: 110px;
         height: 45px;
+        transition: all 0.3s ease;
+        
+        &:hover {
+          background-color: var(--brand-secondary);
+          color: white;
+        }
       }
     }
   }
@@ -135,6 +147,9 @@
     img {
       width: 620px;
       height: 600px;
+      padding: 20px;
+      border-radius: 20px;
+      
       @media (max-width: 1080px) {
         width: 400px;
         height: 400px;
@@ -142,6 +157,7 @@
       @media (max-width: 500px) {
         width: 250px;
         height: 250px;
+        padding: 15px;
       }
     }
   }
@@ -152,11 +168,12 @@
   .title {
     font-size: clamp(20px, 3vw, 35px);
     font-weight: 500;
+    color: var(--text-primary);
   }
   .title_primary {
     text-align: center;
     font-size: clamp(30px, 4vw, 55px);
-    color: rgb(86, 34, 86);
+    color: var(--brand-primary);
     font-weight: 700;
   }
 }
@@ -185,25 +202,35 @@
     .item {
       position: relative;
       padding: 15px;
-      background-color: rgb(255, 245, 255);
+      background-color: var(--bg-card);
+      border: 1px solid var(--border-color);
       border-radius: 10px;
       min-width: 300px;
       flex-basis: 20%;
       height: 450px;
+      box-shadow: var(--shadow-sm);
+      transition: all 0.3s ease;
+      
+      &:hover {
+        box-shadow: var(--shadow-md);
+        transform: translateY(-5px);
+      }
 
       .primary {
         position: absolute;
         bottom: 20px;
-        background-color: rgb(79, 31, 79);
+        background-color: var(--brand-secondary);
         color: white;
         height: 35px;
         width: 80px;
         border-radius: 5px;
         padding: 2px 2px;
         font-size: 12px;
+        transition: all 0.3s ease;
       }
       .primary:hover {
-        color: rgb(79, 31, 79);
+        background-color: var(--brand-hover);
+        transform: scale(1.05);
       }
 
       .logo {
@@ -224,11 +251,12 @@
           font-size: 22px;
           font-weight: 700;
           text-align: center;
-          color: rgb(86, 34, 86);
+          color: var(--brand-primary);
         }
         p {
           padding: 20px;
           font-size: 14px;
+          color: var(--text-secondary);
         }
       }
     }
@@ -256,13 +284,18 @@
     img {
       height: 500px;
       width: 500px;
+      padding: 30px;
+      border-radius: 20px;
+      
       @media (max-width: 1000px) {
         height: 400px;
         width: 400px;
+        padding: 25px;
       }
       @media (max-width: 450px) {
         height: 300px;
         width: 300px;
+        padding: 20px;
       }
     }
   }
@@ -277,13 +310,14 @@
       font-weight: 700;
       text-align: center;
       text-transform: uppercase;
-      color: rgb(86, 34, 86);
+      color: var(--brand-primary);
     }
     .description {
       text-align: center;
       padding-top: clamp(10px, 1.5vw, 20px);
       font-size: 26px;
       font-weight: 400;
+      color: var(--text-secondary);
       @media (max-width: 1000px) {
         font-size: 18px;
       }
@@ -310,10 +344,20 @@
       flex-basis: 30%;
       min-width: 270px;
       padding: 10px;
-      background-color: rgb(255, 245, 255);
+      background-color: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      box-shadow: var(--shadow-sm);
+      transition: all 0.3s ease;
+      
+      &:hover {
+        box-shadow: var(--shadow-md);
+      }
+      
       p {
         font-size: 14px;
         font-weight: 400;
+        color: var(--text-secondary);
       }
     }
   }
@@ -331,6 +375,20 @@
   left: 0;
   width: 100%;
   height: 2px;
-  background: linear-gradient(to right, transparent, black, transparent);
+  background: linear-gradient(to right, transparent, var(--brand-primary), transparent);
   border-radius: 0 0 15px 15px;
+}
+
+// Dark mode image backgrounds - consistent styling
+[data-theme='dark'] {
+  .hero__details img {
+    filter: invert(1) hue-rotate(180deg);
+  }
+  
+  // Subtle background for all content images in dark mode
+  .banner__image img,
+  .hero__image img {
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(10px);
+  }
 }

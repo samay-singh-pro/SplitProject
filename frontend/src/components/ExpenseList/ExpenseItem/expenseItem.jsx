@@ -1,40 +1,107 @@
-import React from "react";
+import { useState } from "react";
 import "./ExpenseCard.scss";
+import { FaChevronDown, FaUser } from "react-icons/fa";
+import { CATEGORY_EMOJI } from "../../../utils/categoryInfer";
+
+const initials = (value) => {
+  if (!value) return "?";
+  const segments = value.trim().split(/\s+/).filter(Boolean);
+  if (segments.length >= 2) {
+    return (segments[0][0] + segments[1][0]).toUpperCase();
+  }
+  return value.slice(0, 2).toUpperCase();
+};
+
+const formatMoney = (n) =>
+  Number(n || 0).toLocaleString(undefined, {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+
+const formatDate = (iso) => {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso;
+  return d.toLocaleDateString(undefined, {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+};
 
 const ExpenseCard = ({ expense }) => {
-  const { amount, description, category, spenderName, splitDetails, createdAt } = expense;
+  const [open, setOpen] = useState(false);
+
+  const {
+    amount,
+    description,
+    category,
+    spenderName,
+    splitDetails = [],
+    createdAt,
+  } = expense || {};
+
+  const emoji = CATEGORY_EMOJI[category] || "✨";
 
   return (
-    <div className="expense-card">
-      <div className="expense-header">
-        <div className="expense-info">
-          <h2 className="description">{description}</h2>
-          <span className="category">{category}</span>
-        </div>
-        <div className="expense-amount">
-          <span className="amount">₹{amount.toFixed(2)}</span>
-        </div>
-      </div>
-
-      <div className="expense-body">
-        <div className="spender-info">
-          <span>Spent by: <strong>{spenderName}</strong></span>
-          <span className="date-time">{createdAt}</span>
+    <article className={`expCard ${open ? "expCard--open" : ""}`}>
+      <button
+        type="button"
+        className="expCard__head"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+      >
+        <div className="expCard__icon">
+          <span>{emoji}</span>
         </div>
 
-        <div className="split-details">
-          <h4>Member Shares</h4>
-          <ul>
-            {splitDetails.map((member) => (
-              <li key={member.memberId}>
-                <span className="member-name">{member.memberName}</span>
-                <span className="share-amount">₹{member.amount.toFixed(2)}</span>
-              </li>
-            ))}
-          </ul>
+        <div className="expCard__info">
+          <h3 className="expCard__title">{description || "Untitled"}</h3>
+          <div className="expCard__meta">
+            <span className="expCard__category">{category || "Others"}</span>
+            <span className="expCard__dot" />
+            <span className="expCard__spender">
+              <FaUser /> {spenderName || "—"}
+            </span>
+            {createdAt && (
+              <>
+                <span className="expCard__dot" />
+                <span className="expCard__date">{formatDate(createdAt)}</span>
+              </>
+            )}
+          </div>
         </div>
-      </div>
-    </div>
+
+        <div className="expCard__amount">
+          ₹{formatMoney(amount)}
+        </div>
+
+        <span className="expCard__chevron" aria-hidden>
+          <FaChevronDown />
+        </span>
+      </button>
+
+      {open && (
+        <div className="expCard__body">
+          <span className="expCard__body-title">Split details</span>
+          {splitDetails.length === 0 ? (
+            <p className="expCard__empty">No split details available.</p>
+          ) : (
+            <ul className="expCard__splits">
+              {splitDetails.map((m, i) => (
+                <li key={m.memberId || i}>
+                  <span className="expCard__avatar">
+                    {initials(m.memberName)}
+                  </span>
+                  <span className="expCard__split-name">{m.memberName}</span>
+                  <strong>₹{formatMoney(m.amount)}</strong>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
+    </article>
   );
 };
 

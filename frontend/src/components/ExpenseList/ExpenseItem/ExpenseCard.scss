@@ -1,107 +1,224 @@
-.expense-card {
-  background: #f6f4e8;;
-  border-radius: 16px;
-  padding: 20px;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
-  margin: 20px 0;
-  max-width: 450px;
-  font-family: 'Poppins', sans-serif;
-  transition: transform 0.3s ease-in-out, box-shadow 0.3s ease;
+// ---------- Expense item (row card) ----------
+
+$brand-soft: rgba(110, 26, 110, 0.08);
+
+.expCard {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 14px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
 
   &:hover {
-    transform: translateY(-10px);
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+    border-color: var(--brand-primary);
+    box-shadow: var(--shadow-sm);
   }
 
-  .expense-header {
-    display: flex;
-    gap: 10px;
-    flex-wrap: wrap;
-    justify-content: space-between;
+  &--open {
+    border-color: var(--brand-primary);
+  }
+
+  &__head {
+    width: 100%;
+    display: grid;
+    grid-template-columns: auto 1fr auto auto;
     align-items: center;
-    margin-bottom: 15px;
+    gap: 14px;
+    padding: 14px 16px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    font-family: inherit;
+    text-align: left;
+    color: inherit;
 
-    .expense-info {
-      display: flex;
-      flex-direction: column;
+    @media (max-width: 540px) {
+      grid-template-columns: auto 1fr auto;
+      grid-template-areas:
+        "icon info chev"
+        "icon amount amount";
+      gap: 6px 12px;
 
-      .description {
-        font-size: 1.6rem;
-        font-weight: 600;
-        color: #2d4059;
+      .expCard__icon {
+        grid-area: icon;
       }
-
-      .category {
-        font-size: 1rem;
-        color: #76c7c0;
-        background: #e0f7fa;
-        padding: 4px 8px;
-        border-radius: 8px;
-        margin-top: 5px;
+      .expCard__info {
+        grid-area: info;
       }
-    }
-
-    .expense-amount {
-      font-size: 1.8rem;
-      font-weight: 700;
-      color: #ff6f61;
-      background: #ffe0e0;
-      padding: 8px 15px;
-      border-radius: 12px;
+      .expCard__amount {
+        grid-area: amount;
+        text-align: right;
+      }
+      .expCard__chevron {
+        grid-area: chev;
+      }
     }
   }
 
-  .expense-body {
-    .spender-info {
+  &__icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    background: $brand-soft;
+    color: var(--brand-primary);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.3rem;
+    flex-shrink: 0;
+  }
+
+  &__info {
+    min-width: 0;
+  }
+
+  &__title {
+    font-size: 0.98rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0 0 2px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &__meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.78rem;
+    color: var(--text-tertiary);
+    flex-wrap: wrap;
+  }
+
+  &__category {
+    color: var(--brand-primary);
+    font-weight: 500;
+  }
+
+  &__dot {
+    width: 3px;
+    height: 3px;
+    border-radius: 50%;
+    background: var(--text-tertiary);
+    opacity: 0.5;
+  }
+
+  &__spender {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+
+    svg {
+      font-size: 0.7rem;
+    }
+  }
+
+  &__amount {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    letter-spacing: -0.01em;
+  }
+
+  &__chevron {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    background: var(--bg-secondary);
+    color: var(--text-secondary);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7rem;
+    transition: transform 0.2s ease, background 0.2s ease;
+  }
+
+  &--open &__chevron {
+    transform: rotate(180deg);
+    background: $brand-soft;
+    color: var(--brand-primary);
+  }
+
+  // ---------- Expanded body ----------
+  &__body {
+    padding: 0 16px 16px;
+    border-top: 1px solid var(--border-light);
+    margin-top: 4px;
+    padding-top: 14px;
+    animation: ec-slide 0.2s ease-out;
+  }
+
+  &__body-title {
+    display: block;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-tertiary);
+    font-weight: 600;
+    margin-bottom: 10px;
+  }
+
+  &__splits {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 8px;
+
+    li {
       display: flex;
-      justify-content: space-between;
-      font-size: 0.9rem;
-      margin-bottom: 20px;
-      color: #707070;
-
-      .date-time {
-        font-size: 0.8rem;
-        color: #999999;
-      }
-    }
-
-    .split-details {
-      min-height: 220px;
-      background-color: #f7f7f7;
-      padding: 12px;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 12px;
+      background: var(--bg-secondary);
       border-radius: 10px;
-
-      h4 {
-        font-size: 1.1rem;
-        margin-bottom: 10px;
-        color: #333;
-      }
-
-      ul {
-        list-style-type: none;
-        padding: 0;
-        margin: 0;
-
-        li {
-          display: flex;
-          justify-content: space-between;
-          margin-bottom: 8px;
-
-          &:last-child {
-            margin-bottom: 0;
-          }
-
-          .member-name {
-            color: #2d4059;
-            font-weight: 500;
-          }
-
-          .share-amount {
-            font-weight: 600;
-            color: #4caf50;
-          }
-        }
-      }
     }
+  }
+
+  &__avatar {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: $brand-soft;
+    color: var(--brand-primary);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7rem;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+
+  &__split-name {
+    flex: 1;
+    font-size: 0.85rem;
+    color: var(--text-primary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &__splits strong {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--brand-primary);
+  }
+
+  &__empty {
+    color: var(--text-tertiary);
+    font-size: 0.85rem;
+    margin: 0;
+  }
+}
+
+@keyframes ec-slide {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }

@@ -1,317 +1,672 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import "./AddSplit.scss";
-import Select from "react-select";
-import addExpense2 from "../../assets/addExpense.png";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchGroups } from "../../store/groupSlice";
 import { addExpense } from "../../store/expenseSlice";
+import GroupSelector from "../shared/GroupSelector/GroupSelector";
+import { useCurrentGroup } from "../../hooks/useCurrentGroup";
+import {
+  FaArrowRight,
+  FaUsers,
+  FaPenFancy,
+  FaCheck,
+  FaExclamationCircle,
+  FaDivide,
+  FaPercent,
+  FaCoins,
+  FaUserCheck,
+  FaMagic,
+  FaChevronDown,
+} from "react-icons/fa";
+import {
+  inferCategory,
+  CATEGORY_EMOJI,
+  ALL_CATEGORIES,
+} from "../../utils/categoryInfer";
+
+const SPLIT_TYPES = [
+  {
+    key: "equally",
+    label: "Equally",
+    sub: "Same share for everyone",
+    icon: <FaDivide />,
+  },
+  {
+    key: "unequally",
+    label: "By amount",
+    sub: "Custom amounts",
+    icon: <FaCoins />,
+  },
+  {
+    key: "percentage",
+    label: "By percent",
+    sub: "Custom %",
+    icon: <FaPercent />,
+  },
+];
+
+const initials = (value) => {
+  if (!value) return "?";
+  const segments = value.trim().split(/\s+/).filter(Boolean);
+  if (segments.length >= 2) {
+    return (segments[0][0] + segments[1][0]).toUpperCase();
+  }
+  return value.slice(0, 2).toUpperCase();
+};
+
+const formatMoney = (n) =>
+  isFinite(n)
+    ? n.toLocaleString(undefined, {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      })
+    : "0.00";
 
 const AddSplit = () => {
   const dispatch = useDispatch();
   const { groups } = useSelector((state) => state.group);
 
-  const [selectedGroup, setSelectedGroup] = useState("");
+  const [selectedGroup, setSelectedGroup] = useCurrentGroup();
   const [amount, setAmount] = useState("");
   const [description, setDescription] = useState("");
   const [spender, setSpender] = useState("");
   const [splitAmong, setSplitAmong] = useState([]);
-  const [category, setCategory] = useState("");
+  const [category, setCategory] = useState("Others");
+  const [categoryAuto, setCategoryAuto] = useState(true);
+  const [showCategoryPicker, setShowCategoryPicker] = useState(false);
   const [splitType, setSplitType] = useState("equally");
   const [unequalSplits, setUnequalSplits] = useState({});
   const [percentageSplits, setPercentageSplits] = useState({});
-  const [error, setError] = useState("");
+  const [errors, setErrors] = useState({});
 
-  const categories = [
-    "Household",
-    "Travel",
-    "Entertainment",
-    "Groceries",
-    "Dining",
-    "Gifts",
-    "Utilities",
-    "Social",
-    "Bill",
-    "Subscriptions",
-    "Education",
-    "Health",
-    "Others",
-  ];
+  const handleDescriptionChange = (val) => {
+    setDescription(val);
+    setErrors((p) => ({ ...p, description: undefined }));
+    if (categoryAuto) {
+      const guess = inferCategory(val);
+      if (guess) setCategory(guess);
+      else if (!val.trim()) setCategory("Others");
+    }
+  };
 
   useEffect(() => {
     dispatch(fetchGroups());
   }, [dispatch]);
 
-  const handleGroupChange = (e) => {
-    const selectedGroupId = e.target.value;
-    setSelectedGroup(selectedGroupId);
+  const group = groups.find((g) => g._id === selectedGroup);
+  // Active members only — removed members can't take part in new expenses.
+  const members = (group?.members || []).filter((m) => !m.removed);
+  const amountNum = parseFloat(amount) || 0;
 
-    const group = groups.find((group) => group._id === selectedGroupId);
-    if (group) {
-      setSplitAmong([]);
-      setSpender("");
+  const handleGroupChange = (id) => {
+    setSelectedGroup(id);
+    setSpender("");
+    setSplitAmong([]);
+    setUnequalSplits({});
+    setPercentageSplits({});
+    setErrors((p) => ({ ...p, group: undefined }));
+  };
+
+  const toggleSplitAmong = (id) => {
+    setSplitAmong((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    );
+    setErrors((p) => ({ ...p, splitAmong: undefined }));
+  };
+
+  const selectAll = () => setSplitAmong(members.map((m) => m._id));
+  const clearAll = () => setSplitAmong([]);
+
+  const unequalTotal = useMemo(
+    () =>
+      splitAmong.reduce(
+        (sum, id) => sum + (parseFloat(unequalSplits[id]) || 0),
+        0
+      ),
+    [splitAmong, unequalSplits]
+  );
+
+  const percentageTotal = useMemo(
+    () =>
+      splitAmong.reduce(
+        (sum, id) => sum + (parseFloat(percentageSplits[id]) || 0),
+        0
+      ),
+    [splitAmong, percentageSplits]
+  );
+
+  const equalShare =
+    splitType === "equally" && splitAmong.length > 0
+      ? amountNum / splitAmong.length
+      : 0;
+
+  const shareFor = (memberId) => {
+    if (splitType === "equally") return equalShare;
+    if (splitType === "unequally")
+      return parseFloat(unequalSplits[memberId]) || 0;
+    if (splitType === "percentage") {
+      const pct = parseFloat(percentageSplits[memberId]) || 0;
+      return (amountNum * pct) / 100;
     }
+    return 0;
   };
 
-  const handleUnequalInputChange = (userId, value) => {
-    setUnequalSplits((prev) => ({
-      ...prev,
-      [userId]: value,
-    }));
-  };
+  const validate = () => {
+    const next = {};
+    if (!selectedGroup) next.group = "Pick a group first.";
+    if (!amount || amountNum <= 0)
+      next.amount = "Enter an amount greater than 0.";
+    if (!description.trim()) next.description = "Describe the expense.";
+    if (!spender) next.spender = "Who paid?";
+    if (splitAmong.length === 0)
+      next.splitAmong = "Select at least one person.";
 
-  const handlePercentageInputChange = (userId, value) => {
-    setPercentageSplits((prev) => ({
-      ...prev,
-      [userId]: value,
-    }));
+    if (splitType === "unequally" && splitAmong.length > 0) {
+      if (Math.abs(unequalTotal - amountNum) > 0.01) {
+        next.unequal = `Amounts add up to ${formatMoney(unequalTotal)}, not ${formatMoney(amountNum)}.`;
+      }
+    }
+    if (splitType === "percentage" && splitAmong.length > 0) {
+      if (Math.abs(percentageTotal - 100) > 0.01) {
+        next.percentage = `Percentages add up to ${percentageTotal}, not 100.`;
+      }
+    }
+    return next;
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    setError("");
-
-    const expenseData = {
-      groupId: selectedGroup,
-      amount: parseFloat(amount),
-      description,
-      category,
-      spenderId: spender,
-      splitDetails: [],
-      splitType,
-    };
-
-    if (
-      !selectedGroup ||
-      !amount ||
-      !description ||
-      !spender ||
-      splitAmong.length === 0
-    ) {
-      setError("Please fill in all the fields");
+    const next = validate();
+    if (Object.keys(next).length > 0) {
+      setErrors(next);
       return;
     }
 
-    if (splitType === "unequally") {
-      const totalUnequal = Object.values(unequalSplits).reduce(
-        (sum, val) => sum + parseFloat(val || 0),
-        0
-      );
-      if (totalUnequal !== parseFloat(amount)) {
-        setError("The sum of unequal splits must equal the total amount");
-        return;
-      }
+    const expenseData = {
+      groupId: selectedGroup,
+      amount: amountNum,
+      description: description.trim(),
+      category,
+      spenderId: spender,
+      splitType,
+      splitDetails: [],
+    };
 
-      expenseData.splitDetails = splitAmong.map((memberId) => ({
-        member: memberId,
-        amount: Number(unequalSplits[memberId]),
+    if (splitType === "unequally") {
+      expenseData.splitDetails = splitAmong.map((id) => ({
+        member: id,
+        amount: parseFloat(unequalSplits[id]) || 0,
       }));
     } else if (splitType === "percentage") {
-      const totalPercentage = Object.values(percentageSplits).reduce(
-        (sum, val) => sum + parseFloat(val || 0),
-        0
-      );
-      if (totalPercentage !== 100) {
-        setError("The sum of percentages must equal 100%");
-        return;
-      }
-
-      expenseData.splitDetails = splitAmong.map((memberId) => ({
-        member: memberId,
-        percentage: Number(percentageSplits[memberId]),
+      expenseData.splitDetails = splitAmong.map((id) => ({
+        member: id,
+        percentage: parseFloat(percentageSplits[id]) || 0,
       }));
-    } else if (splitType === "equally") {
-      expenseData.splitDetails = splitAmong.map((memberId) => ({
-        member: memberId,
-      }));
+    } else {
+      expenseData.splitDetails = splitAmong.map((id) => ({ member: id }));
     }
 
-    dispatch(addExpense(expenseData))
-      .then((response) => {
-        setSelectedGroup("");
-        setAmount("");
-        setDescription("");
-        setSpender("");
-        setCategory("");
-        setSplitAmong([]);
-        setUnequalSplits({});
-        setPercentageSplits({});
-        setSplitType("equally");
-      })
-      .catch((error) => {
-        console.error("Error adding expense:", error);
-        setError("Failed to add the expense");
-      });
-  };
-
-  const groupOptions =
-    groups.map((group) => ({
-      value: group._id,
-      label: group.name,
-    })) || [];
-
-  const selectedGroupMembers =
-    groups.find((group) => group._id === selectedGroup)?.members || [];
-
-  const spenderOptions =
-    selectedGroupMembers.map((member) => ({
-      value: member._id,
-      label: member.name, 
-    })) || [];
-
-  const customStyles = {
-    control: (base) => ({
-      ...base,
-      height: "40px",
-      minHeight: "40px",
-    }),
-    valueContainer: (base) => ({
-      ...base,
-      padding: "0 8px",
-    }),
+    dispatch(addExpense(expenseData)).then(() => {
+      setAmount("");
+      setDescription("");
+      setSpender("");
+      setCategory("Others");
+      setCategoryAuto(true);
+      setShowCategoryPicker(false);
+      setSplitAmong([]);
+      setUnequalSplits({});
+      setPercentageSplits({});
+      setSplitType("equally");
+      setErrors({});
+    });
   };
 
   return (
-    <div className="expense">
-      <div className="expense__header">
-        <span>Add new Expense</span>
+    <div className="addSplit">
+      <div className="addSplit__bg" aria-hidden>
+        <div className="addSplit__grid" />
       </div>
-      <div className="expense__container">
-        <form className="expense__form" onSubmit={handleSubmit}>
-          <div className="expense__form__inputs">
-            <label>Choose Group</label>
-            <select value={selectedGroup} onChange={handleGroupChange}>
-              <option value="">Select Group</option>
-              {groupOptions.map((group) => (
-                <option key={group.value} value={group.value}>
-                  {group.label}
-                </option>
-              ))}
-            </select>
-          </div>
 
-          <div className="expense__form__inputs">
-            <label>Add Amount</label>
-            <input
-              type="number"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              required
-            />
-          </div>
-
-          <div className="expense__form__inputs">
-            <label>Description</label>
-            <input
-              type="text"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              required
-            />
-          </div>
-          <div className="expense__form__inputs">
-            <label>Category</label>
-            <select
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
-            >
-              <option value="">Select Category</option>
-              {categories.map((category, index) => (
-                <option key={index} value={category}>
-                  {category}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="expense__form__inputs">
-            <label>Spended By Whom</label>
-            <select
-              value={spender}
-              onChange={(e) => setSpender(e.target.value)}
-            >
-              <option value="">Select User</option>
-              {spenderOptions.map((user) => (
-                <option key={user.value} value={user.value}>
-                  {user.label}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="expense__form__inputs">
-            <label>Split Among Whom</label>
-            <Select
-              isMulti
-              options={spenderOptions}
-              onChange={(selectedOptions) =>
-                setSplitAmong(selectedOptions.map((option) => option.value))
-              }
-              className="basic-multi-select"
-              classNamePrefix="select"
-              styles={customStyles}
-              placeholder="Select users to split among"
-              value={spenderOptions.filter((option) =>
-                splitAmong.includes(option.value)
-              )}
-            />
-          </div>
-
-          <div className="expense__form__inputs">
-            <label>Split Type</label>
-            <select
-              value={splitType}
-              onChange={(e) => setSplitType(e.target.value)}
-            >
-              <option value="equally">Split Equally</option>
-              <option value="unequally">Split Unequally</option>
-              <option value="percentage">Split by Percentage</option>
-            </select>
-          </div>
-
-          {splitType === "unequally" &&
-            splitAmong.map((userId) => {
-              const user = spenderOptions.find((u) => u.value === userId);
-              return (
-                <div className="expense__form__inputs" key={userId}>
-                  <label>{user?.label}'s share</label>
-                  <input
-                    className="dynamicInputs"
-                    type="number"
-                    value={unequalSplits[userId] || ""}
-                    onChange={(e) =>
-                      handleUnequalInputChange(userId, e.target.value)
-                    }
-                  />
-                </div>
-              );
-            })}
-
-          {splitType === "percentage" &&
-            splitAmong.map((userId) => {
-              const user = spenderOptions.find((u) => u.value === userId);
-              return (
-                <div className="expense__form__inputs" key={userId}>
-                  <label>{user?.label}'s percentage</label>
-                  <input
-                    type="number"
-                    value={percentageSplits[userId] || ""}
-                    onChange={(e) =>
-                      handlePercentageInputChange(userId, e.target.value)
-                    }
-                  />
-                </div>
-              );
-            })}
-
-          {error && <p style={{ color: "red" }}>{error}</p>}
-          <button className="submitButton" type="submit">
-            Add Expense
-          </button>
-        </form>
-        <div className="expense__img">
-          <h1>Track, Split, Save</h1>
-          <img src={addExpense2} alt="" />
+      <header className="addSplit__topbar">
+        <div className="addSplit__crumbs">
+          <span>Dashboard</span>
+          <FaArrowRight />
+          <span className="active">Add split</span>
         </div>
+        <h1 className="addSplit__title">Add an expense</h1>
+        <p className="addSplit__subtitle">
+          Track what was spent and how it should be split.
+        </p>
+      </header>
+
+      <div className="addSplit__group-row">
+        <GroupSelector
+          groups={groups}
+          selectedId={selectedGroup}
+          onSelect={handleGroupChange}
+        />
+        {errors.group && (
+          <span className="ng-field__error ng-field__error--block">
+            <FaExclamationCircle />
+            {errors.group}
+          </span>
+        )}
+      </div>
+
+      <div className="addSplit__layout">
+        <form
+          className="addSplit__card addSplit__form"
+          onSubmit={handleSubmit}
+          noValidate
+        >
+          {/* ----- What ----- */}
+          <section className="ng-section">
+            <div className="ng-section__head">
+              <span className="ng-section__step">1</span>
+              <div>
+                <h2>What was it?</h2>
+              </div>
+            </div>
+
+            <div
+              className={`ng-field addSplit__amount ${
+                errors.amount ? "ng-field--error" : ""
+              }`}
+            >
+              <label htmlFor="as-amount">
+                <FaCoins /> Amount<span className="ng-required">*</span>
+              </label>
+              <div className="addSplit__amount-input">
+                <span>₹</span>
+                <input
+                  id="as-amount"
+                  type="number"
+                  inputMode="decimal"
+                  placeholder="0.00"
+                  value={amount}
+                  onChange={(e) => {
+                    setAmount(e.target.value);
+                    setErrors((p) => ({ ...p, amount: undefined }));
+                  }}
+                  min="0"
+                  step="0.01"
+                />
+              </div>
+              {errors.amount && (
+                <span className="ng-field__error">
+                  <FaExclamationCircle /> {errors.amount}
+                </span>
+              )}
+            </div>
+
+            <div
+              className={`ng-field ${
+                errors.description ? "ng-field--error" : ""
+              }`}
+            >
+              <label htmlFor="as-desc">
+                <FaPenFancy /> Description
+                <span className="ng-required">*</span>
+              </label>
+              <input
+                id="as-desc"
+                type="text"
+                placeholder="e.g. Dinner at Mainland China"
+                value={description}
+                onChange={(e) => handleDescriptionChange(e.target.value)}
+              />
+              {errors.description && (
+                <span className="ng-field__error">
+                  <FaExclamationCircle /> {errors.description}
+                </span>
+              )}
+            </div>
+
+            {/* Inferred category, hidden picker until user wants to change. */}
+            <div className="addSplit__autocat">
+              <button
+                type="button"
+                className={`addSplit__autotag ${
+                  showCategoryPicker ? "addSplit__autotag--open" : ""
+                }`}
+                onClick={() => setShowCategoryPicker((v) => !v)}
+              >
+                {categoryAuto && <FaMagic />}
+                <span>{CATEGORY_EMOJI[category] || "✨"}</span>
+                <strong>{category}</strong>
+                {categoryAuto && <small>auto</small>}
+                <FaChevronDown className="addSplit__autotag-chev" />
+              </button>
+              {showCategoryPicker && (
+                <div className="ng-chips addSplit__autocat-chips">
+                  {ALL_CATEGORIES.map((c) => (
+                    <button
+                      type="button"
+                      key={c}
+                      className={`ng-chip ${
+                        category === c ? "ng-chip--active" : ""
+                      }`}
+                      onClick={() => {
+                        setCategory(c);
+                        setCategoryAuto(false);
+                        setShowCategoryPicker(false);
+                      }}
+                    >
+                      <span className="ng-chip__emoji">
+                        {CATEGORY_EMOJI[c]}
+                      </span>
+                      {c}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </section>
+
+          {/* ----- Who paid ----- */}
+          <section className="ng-section">
+            <div className="ng-section__head">
+              <span className="ng-section__step">2</span>
+              <div>
+                <h2>Who paid?</h2>
+              </div>
+            </div>
+
+            {!group ? (
+              <div className="addSplit__hint">
+                <FaUsers /> Pick a group above to see members.
+              </div>
+            ) : members.length === 0 ? (
+              <div className="addSplit__hint">
+                This group has no members yet.
+              </div>
+            ) : (
+              <>
+                <div className="addSplit__avatars">
+                  {members.map((m) => (
+                    <button
+                      type="button"
+                      key={m._id}
+                      className={`addSplit__avatar-chip ${
+                        spender === m._id
+                          ? "addSplit__avatar-chip--active"
+                          : ""
+                      }`}
+                      onClick={() => {
+                        setSpender(m._id);
+                        setErrors((p) => ({ ...p, spender: undefined }));
+                      }}
+                    >
+                      <span className="addSplit__avatar">
+                        {initials(m.name)}
+                      </span>
+                      <span className="addSplit__avatar-name">{m.name}</span>
+                      {spender === m._id && (
+                        <span className="addSplit__avatar-tick">
+                          <FaCheck />
+                        </span>
+                      )}
+                    </button>
+                  ))}
+                </div>
+                {errors.spender && (
+                  <span className="ng-field__error ng-field__error--block">
+                    <FaExclamationCircle /> {errors.spender}
+                  </span>
+                )}
+              </>
+            )}
+          </section>
+
+          {/* ----- Split among ----- */}
+          <section className="ng-section">
+            <div className="ng-section__head">
+              <span className="ng-section__step">3</span>
+              <div>
+                <h2>Split with</h2>
+              </div>
+            </div>
+
+            {group && members.length > 0 && (
+              <div className="addSplit__bulk">
+                <button type="button" onClick={selectAll}>
+                  <FaUserCheck /> Select all
+                </button>
+                {splitAmong.length > 0 && (
+                  <button type="button" onClick={clearAll}>
+                    Clear ({splitAmong.length})
+                  </button>
+                )}
+              </div>
+            )}
+
+            {!group ? (
+              <div className="addSplit__hint">
+                <FaUsers /> Pick a group above to see members.
+              </div>
+            ) : (
+              <>
+                <div className="addSplit__avatars">
+                  {members.map((m) => {
+                    const active = splitAmong.includes(m._id);
+                    return (
+                      <button
+                        type="button"
+                        key={m._id}
+                        className={`addSplit__avatar-chip ${
+                          active ? "addSplit__avatar-chip--active" : ""
+                        }`}
+                        onClick={() => toggleSplitAmong(m._id)}
+                      >
+                        <span className="addSplit__avatar">
+                          {initials(m.name)}
+                        </span>
+                        <span className="addSplit__avatar-name">{m.name}</span>
+                        {active && (
+                          <span className="addSplit__avatar-tick">
+                            <FaCheck />
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+                {errors.splitAmong && (
+                  <span className="ng-field__error ng-field__error--block">
+                    <FaExclamationCircle /> {errors.splitAmong}
+                  </span>
+                )}
+              </>
+            )}
+          </section>
+
+          {/* ----- How to split ----- */}
+          <section className="ng-section">
+            <div className="ng-section__head">
+              <span className="ng-section__step">4</span>
+              <div>
+                <h2>How to split?</h2>
+              </div>
+            </div>
+
+            <div className="addSplit__segmented" role="tablist">
+              {SPLIT_TYPES.map((t) => (
+                <button
+                  type="button"
+                  key={t.key}
+                  role="tab"
+                  aria-selected={splitType === t.key}
+                  className={`addSplit__seg ${
+                    splitType === t.key ? "addSplit__seg--active" : ""
+                  }`}
+                  onClick={() => setSplitType(t.key)}
+                >
+                  <span className="addSplit__seg-icon">{t.icon}</span>
+                  <span className="addSplit__seg-label">{t.label}</span>
+                  <span className="addSplit__seg-sub">{t.sub}</span>
+                </button>
+              ))}
+            </div>
+
+            {splitType === "unequally" && splitAmong.length > 0 && (
+              <div className="addSplit__split-table">
+                {splitAmong.map((id) => {
+                  const m = members.find((x) => x._id === id);
+                  return (
+                    <div key={id} className="addSplit__split-row">
+                      <span className="addSplit__avatar addSplit__avatar--sm">
+                        {initials(m?.name)}
+                      </span>
+                      <span className="addSplit__split-name">{m?.name}</span>
+                      <div className="addSplit__split-input">
+                        <span>₹</span>
+                        <input
+                          type="number"
+                          inputMode="decimal"
+                          value={unequalSplits[id] || ""}
+                          onChange={(e) =>
+                            setUnequalSplits((p) => ({
+                              ...p,
+                              [id]: e.target.value,
+                            }))
+                          }
+                          placeholder="0.00"
+                          min="0"
+                          step="0.01"
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
+                <div
+                  className={`addSplit__total ${
+                    Math.abs(unequalTotal - amountNum) < 0.01 && amountNum > 0
+                      ? "addSplit__total--ok"
+                      : "addSplit__total--bad"
+                  }`}
+                >
+                  Sum: ₹{formatMoney(unequalTotal)} of ₹{formatMoney(amountNum)}
+                </div>
+                {errors.unequal && (
+                  <span className="ng-field__error ng-field__error--block">
+                    <FaExclamationCircle /> {errors.unequal}
+                  </span>
+                )}
+              </div>
+            )}
+
+            {splitType === "percentage" && splitAmong.length > 0 && (
+              <div className="addSplit__split-table">
+                {splitAmong.map((id) => {
+                  const m = members.find((x) => x._id === id);
+                  return (
+                    <div key={id} className="addSplit__split-row">
+                      <span className="addSplit__avatar addSplit__avatar--sm">
+                        {initials(m?.name)}
+                      </span>
+                      <span className="addSplit__split-name">{m?.name}</span>
+                      <div className="addSplit__split-input">
+                        <input
+                          type="number"
+                          inputMode="decimal"
+                          value={percentageSplits[id] || ""}
+                          onChange={(e) =>
+                            setPercentageSplits((p) => ({
+                              ...p,
+                              [id]: e.target.value,
+                            }))
+                          }
+                          placeholder="0"
+                          min="0"
+                          max="100"
+                          step="0.1"
+                        />
+                        <span>%</span>
+                      </div>
+                    </div>
+                  );
+                })}
+                <div
+                  className={`addSplit__total ${
+                    Math.abs(percentageTotal - 100) < 0.01
+                      ? "addSplit__total--ok"
+                      : "addSplit__total--bad"
+                  }`}
+                >
+                  Sum: {percentageTotal}% of 100%
+                </div>
+                {errors.percentage && (
+                  <span className="ng-field__error ng-field__error--block">
+                    <FaExclamationCircle /> {errors.percentage}
+                  </span>
+                )}
+              </div>
+            )}
+          </section>
+
+          <div className="ng-actions">
+            <button type="submit" className="ng-btn ng-btn--primary">
+              <FaCheck /> Save expense
+            </button>
+          </div>
+        </form>
+
+        {/* ---------- Sticky live summary ---------- */}
+        <aside className="addSplit__card addSplit__summary">
+          <div className="addSplit__summary-label">Summary</div>
+
+          <div className="addSplit__summary-amount">
+            <span className="addSplit__summary-currency">₹</span>
+            <span className="addSplit__summary-value">
+              {formatMoney(amountNum)}
+            </span>
+          </div>
+
+          <div className="addSplit__summary-meta">
+            <div className="addSplit__summary-row">
+              <span>Group</span>
+              <strong>{group?.name || "—"}</strong>
+            </div>
+            <div className="addSplit__summary-row">
+              <span>Paid by</span>
+              <strong>
+                {members.find((m) => m._id === spender)?.name || "—"}
+              </strong>
+            </div>
+            <div className="addSplit__summary-row">
+              <span>Category</span>
+              <strong>{category || "—"}</strong>
+            </div>
+            <div className="addSplit__summary-row">
+              <span>Split type</span>
+              <strong>
+                {SPLIT_TYPES.find((t) => t.key === splitType)?.label}
+              </strong>
+            </div>
+          </div>
+
+          {splitAmong.length > 0 && amountNum > 0 && (
+            <div className="addSplit__summary-shares">
+              <span className="addSplit__summary-shares-title">
+                Per-person share
+              </span>
+              <ul>
+                {splitAmong.map((id) => {
+                  const m = members.find((x) => x._id === id);
+                  return (
+                    <li key={id}>
+                      <span className="addSplit__avatar addSplit__avatar--sm">
+                        {initials(m?.name)}
+                      </span>
+                      <span>{m?.name}</span>
+                      <strong>₹{formatMoney(shareFor(id))}</strong>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          )}
+        </aside>
       </div>
     </div>
   );

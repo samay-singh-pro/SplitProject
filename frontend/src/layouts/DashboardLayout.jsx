@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import SideNav from "../components/SideNav/SideNav";
 import Groups from "../components/Groups/Groups";
 import "./DashboardLayout.scss";
@@ -15,7 +15,7 @@ const DashboardLayout = () => {
       case "AddGroup":
         return <NewGroup />;
       case "Groups":
-        return <Groups />;
+        return <Groups onNavigate={setActiveComponent} />;
       case "AddSplit":
         return <AddSplit />;
       case "ViewSplits":
@@ -28,8 +28,8 @@ const DashboardLayout = () => {
   };
   return (
     <div className="dashboard">
-      <SideNav onNavClick={setActiveComponent} />
-      <>{renderComponent()}</>
+      <SideNav onNavClick={setActiveComponent} active={activeComponent} />
+      <main className="dashboard__main">{renderComponent()}</main>
     </div>
   );
 };

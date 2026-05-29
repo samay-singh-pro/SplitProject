@@ -1,70 +1,231 @@
-.nav-card {
+// ---------- Side navigation ----------
+// Desktop: left sidebar card.
+// Mobile / tablet (<=850px): fixed bottom tab bar — always visible,
+// no scrolling needed to reach navigation, native-app feel.
+
+$brand-soft: rgba(110, 26, 110, 0.08);
+
+.sideNav {
   position: sticky;
   top: 20px;
-  z-index: 1000;
-  justify-content: center;
-  align-items: center;
-  margin: 20px 20px;
-  height: 100vh;
+  margin: 20px;
+  width: 220px;
+  padding: 16px 12px;
   display: flex;
   flex-direction: column;
-  background-color: #f0f0f0;
+  gap: 14px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  box-shadow: var(--shadow-sm);
+  align-self: flex-start;
 
-  border-radius: 10px;
-  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
-  width: 200px;
-  gap: 15px;
-  @media (max-width: 850px) {
-    margin: 0;
-    position: static;
-    flex-direction: row;
-    width: 100%;
-    height: 60px;
+  &__brand {
+    padding: 0 8px;
   }
-}
 
-.nav-item {
-  display: flex;
-  justify-content: space-around;
-  align-items: center;
-  margin-left: 40px;
-  border-radius: 20px 0px 0px 20px;
-  width: 150px;
-  padding: 10px;
-  color: white;
-  background-color: rgb(86 45 86);
-  text-align: center;
-  cursor: pointer;
-  transition: background-color 0.3s ease;
-  @media (max-width: 600px) {
-    .nav-label {
-      display: none;
+  &__label {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--text-tertiary);
+    font-weight: 600;
+  }
+
+  &__list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  &__item {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    border: none;
+    background: transparent;
+    border-radius: 10px;
+    color: var(--text-secondary);
+    font-size: 0.92rem;
+    font-weight: 500;
+    font-family: inherit;
+    cursor: pointer;
+    text-align: left;
+    width: 100%;
+    transition: background 0.18s ease, color 0.18s ease;
+
+    &:hover {
+      background: var(--bg-secondary);
+      color: var(--text-primary);
+    }
+
+    &--active {
+      background: $brand-soft;
+      color: var(--brand-primary);
+      font-weight: 600;
+
+      &:hover {
+        background: $brand-soft;
+        color: var(--brand-primary);
+      }
     }
   }
-  @media (max-width: 850px) {
-    margin-top: 15px;
-    border-radius: 20px 20px 0 0;
-    margin-left: 0px;
-  }
-}
 
-.nav-item:hover {
-  background-color: #4a175b;
-}
-
-@media (max-width: 600px) {
-  .nav-card {
-    flex-direction: row;
-    justify-content: space-around;
-    width: 100%;
-    padding: 10px;
+  &__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
+    background: var(--bg-secondary);
+    color: var(--text-tertiary);
+    font-size: 0.85rem;
+    flex-shrink: 0;
+    transition: background 0.18s ease, color 0.18s ease;
   }
 
-  .nav-item {
+  &__item:hover &__icon {
+    background: var(--bg-hover);
+    color: var(--text-primary);
+  }
+
+  &__item--active &__icon {
+    background: var(--brand-primary);
+    color: white;
+  }
+
+  &__indicator {
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 3px;
+    height: 18px;
+    border-radius: 0 3px 3px 0;
+    background: var(--brand-primary);
+  }
+
+  // Show long labels by default; mobile overrides.
+  &__text--long {
     flex: 1;
-    border-radius: 10px 10px 0 0;
-    height: 40px;
-    margin-top: 20px;
-    max-width: 100px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  &__text--short {
+    display: none;
+  }
+
+  // ----- Mobile / tablet: fixed bottom tab bar -----
+  @media (max-width: 850px) {
+    position: fixed;
+    top: auto;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    margin: 0;
+    width: 100%;
+    height: auto;
+    padding: 8px 6px calc(8px + env(safe-area-inset-bottom, 0px));
+    flex-direction: row;
+    align-items: center;
+    gap: 0;
+    border-radius: 0;
+    border: none;
+    border-top: 1px solid var(--border-color);
+    background: var(--bg-card);
+    backdrop-filter: blur(10px);
+    box-shadow: 0 -6px 20px rgba(0, 0, 0, 0.06);
+    z-index: 95;
+
+    // The "Menu" header label is desktop-only.
+    &__brand {
+      display: none;
+    }
+
+    &__list {
+      flex-direction: row;
+      flex: 1;
+      gap: 2px;
+      width: 100%;
+    }
+
+    &__item {
+      flex: 1;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+      padding: 6px 4px 4px;
+      border-radius: 12px;
+      min-height: 56px; // big tap target for small fingers
+      color: var(--text-tertiary);
+
+      &:hover {
+        background: transparent;
+      }
+
+      &--active {
+        background: transparent;
+        color: var(--brand-primary);
+      }
+    }
+
+    &__icon {
+      width: 34px;
+      height: 34px;
+      background: transparent;
+      color: var(--text-tertiary);
+      font-size: 1rem;
+      border-radius: 12px;
+    }
+
+    &__item:hover &__icon {
+      background: transparent;
+      color: var(--text-primary);
+    }
+
+    &__item--active &__icon {
+      background: $brand-soft;
+      color: var(--brand-primary);
+    }
+
+    &__indicator {
+      display: none;
+    }
+
+    &__text--long {
+      display: none;
+    }
+
+    &__text--short {
+      display: block;
+      font-size: 0.7rem;
+      font-weight: 500;
+      letter-spacing: 0;
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    &__item--active &__text--short {
+      font-weight: 700;
+    }
+  }
+
+  // Tiny phones: still readable, slightly tighter
+  @media (max-width: 360px) {
+    &__icon {
+      width: 30px;
+      height: 30px;
+      font-size: 0.92rem;
+    }
+    &__text--short {
+      font-size: 0.66rem;
+    }
   }
 }

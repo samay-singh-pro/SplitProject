@@ -16,9 +16,11 @@ export const getAllExpenses = createAsyncThunk(
           },
         }
       );
-      toast.success("list fetched successfully");
       return response.data.expenses;
-    } catch (error) {}
+    } catch (error) {
+      toast.error("Failed to load expenses.");
+      return rejectWithValue(error.response?.data || { message: error.message });
+    }
   }
 );
 

@@ -14,7 +14,7 @@ export const authenticated = async (req, res, next) => {
       if (blacklistedToken) {
         return res.status(401).json({ message: 'expired Token, please login again' });
       }
-      const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
       req.user = await User.findById(decoded.id).select("-password");
       next();

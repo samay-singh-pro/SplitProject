@@ -13,11 +13,10 @@ export const fetchGroupStats = createAsyncThunk(
           Authorization: `Bearer ${token}`,
         },
       });
-      toast.success("Stats fetched successfully");
       return response.data;
     } catch (error) {
-      toast.error("Failed to add expense.");
-      return rejectWithValue(error.response.data);
+      toast.error("Failed to load report.");
+      return rejectWithValue(error.response?.data || { message: error.message });
     }
   }
 );

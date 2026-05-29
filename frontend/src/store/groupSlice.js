@@ -15,7 +15,86 @@ export const createGroup = createAsyncThunk(
       });
       return response.data;
     } catch (error) {
-      return rejectWithValue(error.response.data);
+      return rejectWithValue(error.response?.data || { message: error.message });
+    }
+  }
+);
+
+const authHeader = () => {
+  const token = localStorage.getItem("token");
+  return { Authorization: `Bearer ${token}` };
+};
+
+export const updateGroup = createAsyncThunk(
+  "group/updateGroup",
+  async ({ groupId, data }, { rejectWithValue }) => {
+    try {
+      const response = await axios.patch(
+        `${BASE_URL}/group/${groupId}`,
+        data,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+            ...authHeader(),
+          },
+        }
+      );
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error.response?.data || { message: error.message }
+      );
+    }
+  }
+);
+
+export const deleteGroup = createAsyncThunk(
+  "group/deleteGroup",
+  async (groupId, { rejectWithValue }) => {
+    try {
+      const response = await axios.delete(`${BASE_URL}/group/${groupId}`, {
+        headers: authHeader(),
+      });
+      return { groupId, ...response.data };
+    } catch (error) {
+      return rejectWithValue(
+        error.response?.data || { message: error.message }
+      );
+    }
+  }
+);
+
+export const addGroupMember = createAsyncThunk(
+  "group/addGroupMember",
+  async ({ groupId, name }, { rejectWithValue }) => {
+    try {
+      const response = await axios.post(
+        `${BASE_URL}/group/${groupId}/members`,
+        { name },
+        { headers: authHeader() }
+      );
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error.response?.data || { message: error.message }
+      );
+    }
+  }
+);
+
+export const removeGroupMember = createAsyncThunk(
+  "group/removeGroupMember",
+  async ({ groupId, memberId }, { rejectWithValue }) => {
+    try {
+      const response = await axios.delete(
+        `${BASE_URL}/group/${groupId}/members/${memberId}`,
+        { headers: authHeader() }
+      );
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error.response?.data || { message: error.message }
+      );
     }
   }
 );
@@ -65,7 +144,7 @@ const groupSlice = createSlice({
       })
       .addCase(createGroup.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.error.message;
+        state.error = action.payload || { message: action.error.message };
         state.success = false;
       });
 
@@ -81,6 +160,34 @@ const groupSlice = createSlice({
       .addCase(fetchGroups.rejected, (state, action) => {
         state.loading = false;
         state.error = action.error.message;
+      });
+
+    // Helper: replace a group in state by _id.
+    const replaceGroup = (state, updated) => {
+      if (!updated?._id) return;
+      const idx = state.groups.findIndex(
+        (g) => g._id?.toString?.() === updated._id?.toString?.()
+      );
+      if (idx >= 0) state.groups[idx] = updated;
+    };
+
+    builder
+      .addCase(updateGroup.fulfilled, (state, action) => {
+        replaceGroup(state, action.payload);
+      })
+      .addCase(addGroupMember.fulfilled, (state, action) => {
+        replaceGroup(state, action.payload);
+      })
+      .addCase(removeGroupMember.fulfilled, (state, action) => {
+        replaceGroup(state, action.payload);
+      })
+      .addCase(deleteGroup.fulfilled, (state, action) => {
+        const id = action.payload?.groupId?.toString?.();
+        if (id) {
+          state.groups = state.groups.filter(
+            (g) => g._id?.toString?.() !== id
+          );
+        }
       });
   },
 });

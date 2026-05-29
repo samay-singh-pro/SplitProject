@@ -1,49 +1,79 @@
 .offerings {
-  padding: 50px 20px;
+  padding: 60px 40px;
   text-align: center;
 
   &__title {
     font-size: 3.5rem;
-    color: rgb(110, 26, 110);
-    margin-bottom: 40px;
+    color: var(--brand-primary);
+    margin-bottom: 20px;
     font-weight: 600;
   }
 
   &__devices {
     display: flex;
     flex-direction: column;
+    margin-bottom: 80px;
+    
     h2 {
       font-size: 2rem;
       font-weight: 500;
+      color: var(--text-primary);
+      margin-bottom: 30px;
     }
 
     .images {
-      margin: 30px 20px;
+      margin: 0 auto;
+      padding: 40px 20px;
       font-size: 25px;
       font-weight: 500;
-      color: purple;
+      color: var(--brand-primary);
       display: flex;
       align-items: center;
       justify-content: center;
+      gap: 60px;
+      max-width: 1400px;
+      
       @media (max-width: 850px) {
         flex-direction: column;
+        gap: 40px;
+        padding: 30px 20px;
       }
+      
       .device {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        
         img {
-          width: 500px;
+          width: 100%;
+          max-width: 380px;
+          height: auto;
+          padding: 0;
+          border-radius: 15px;
+          
           @media (max-width: 850px) {
+            max-width: 340px;
           }
         }
       }
     }
   }
+  
   &__reports {
     display: flex;
-    gap: 30px;
-    margin: 20px 30px;
+    gap: 60px;
+    margin: 0 auto;
+    padding: 60px 40px;
+    max-width: 1400px;
+    align-items: center;
+    
     @media (max-width: 850px) {
       flex-direction: column;
+      gap: 40px;
+      padding: 40px 20px;
     }
+    
     .description {
       display: flex;
       flex-direction: column;
@@ -51,22 +81,45 @@
       align-items: center;
       flex: 1;
       text-align: center;
-      padding: 20px;
+      padding: 40px 20px;
+      
+      h2 {
+        color: var(--text-primary);
+      }
+      
+      p {
+        color: var(--text-secondary);
+      }
+      
       h1 {
         font-size: 2.5rem;
         font-weight: 500;
+        margin-bottom: 20px;
+        line-height: 1.3;
       }
       h3 {
         font-size: 1.25rem;
         font-weight: 300;
+        line-height: 1.6;
+        max-width: 600px;
       }
     }
     .image {
       display: flex;
       flex: 1;
       justify-content: center;
+      align-items: center;
+      
       img {
-        max-width: 800px;
+        width: 100%;
+        max-width: 600px;
+        height: auto;
+        padding: 0;
+        border-radius: 20px;
+        
+        @media (max-width: 850px) {
+          max-width: 90%;
+        }
       }
     }
   }
@@ -171,5 +224,20 @@
       font-size: 1.5rem;
       font-weight: 300;
     }
+  }
+}
+
+// Dark mode - subtle image background
+[data-theme='dark'] {
+  .offerings__devices .device img {
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(10px);
+    padding: 20px;
+  }
+  
+  .offerings__reports .image img {
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(10px);
+    padding: 30px;
   }
 }
