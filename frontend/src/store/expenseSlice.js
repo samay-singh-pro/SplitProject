@@ -47,6 +47,57 @@ export const addExpense = createAsyncThunk(
   }
 );
 
+export const updateExpense = createAsyncThunk(
+  "expense/updateExpense",
+  async ({ expenseId, ...payload }, { rejectWithValue }) => {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await axios.patch(
+        `${BASE_URL}/expense/${expenseId}`,
+        payload,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      toast.success("Expense updated.");
+      return { expenseId, ...response.data };
+    } catch (error) {
+      const data = error.response?.data;
+      const firstFieldError =
+        data?.errors && typeof data.errors === "object"
+          ? Object.values(data.errors)[0]
+          : null;
+      toast.error(firstFieldError || data?.message || "Failed to update expense.");
+      return rejectWithValue(data || { message: error.message });
+    }
+  }
+);
+
+export const deleteExpense = createAsyncThunk(
+  "expense/deleteExpense",
+  async (expenseId, { rejectWithValue }) => {
+    try {
+      const token = localStorage.getItem("token");
+      await axios.delete(`${BASE_URL}/expense/${expenseId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      toast.success("Expense deleted.");
+      return expenseId;
+    } catch (error) {
+      toast.error(
+        error.response?.data?.message || "Failed to delete expense."
+      );
+      return rejectWithValue(
+        error.response?.data || { message: error.message }
+      );
+    }
+  }
+);
+
 const expenseSlice = createSlice({
   name: "expense",
   initialState: {
@@ -81,6 +132,16 @@ const expenseSlice = createSlice({
         state.loading = false;
         state.error = action.error.message;
       });
+    builder
+      .addCase(deleteExpense.fulfilled, (state, action) => {
+        state.expenses = state.expenses.filter(
+          (e) => (e._id || "").toString() !== action.payload?.toString?.()
+        );
+      });
+    // Note: we don't merge updateExpense.fulfilled into state here —
+    // the response payload differs in shape from the populated GET, so
+    // callers refetch (getAllExpenses + fetchGroupStats) after a save
+    // to keep view consistent.
   },
 });
 

@@ -101,7 +101,9 @@ $brand-soft: rgba(110, 26, 110, 0.08);
     display: flex;
     gap: 10px;
     overflow-x: auto;
-    padding-bottom: 4px;
+    // Vertical padding gives room for the chip's hover-lift + active
+    // box-shadow so the top/bottom isn't clipped by overflow-x: auto.
+    padding: 6px 2px 8px;
     scrollbar-width: thin;
     scrollbar-color: var(--border-color) transparent;
 

@@ -282,7 +282,9 @@ $success: #16a34a;
   // ---------- Bulk actions for split selector ----------
   &__bulk {
     display: flex;
+    align-items: center;
     gap: 8px;
+    flex-wrap: wrap;
 
     button {
       display: inline-flex;
@@ -311,32 +313,126 @@ $success: #16a34a;
     }
   }
 
-  // ---------- Avatar selection grid ----------
+  // ---------- Member picker (compact pills in bordered card) ----------
+  // Always rendered as a contained, capped chip area so adding members
+  // never sprawls the form. 2 members = small card; 12 members = same
+  // card with internal scroll. Same design used in EditExpenseModal so
+  // Add and Edit feel identical.
   &__avatars {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-    gap: 8px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    max-height: 200px;
+    overflow-y: auto;
+    align-content: flex-start;
+    padding: 8px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+
+    scrollbar-width: thin;
+    scrollbar-color: var(--border-color) transparent;
+
+    &::-webkit-scrollbar {
+      width: 6px;
+    }
+    &::-webkit-scrollbar-thumb {
+      background: var(--border-color);
+      border-radius: 3px;
+    }
   }
 
-  &__avatar-chip {
-    position: relative;
+  // ---------- Search box above large-group pickers ----------
+  &__picker-search {
     display: flex;
     align-items: center;
-    gap: 10px;
-    padding: 8px 32px 8px 8px;
-    background: var(--bg-secondary);
+    gap: 8px;
+    padding: 0 8px 0 12px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    margin-bottom: 10px;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+
+    &:focus-within {
+      border-color: var(--brand-primary);
+      box-shadow: 0 0 0 3px $brand-soft;
+    }
+
+    > svg {
+      color: var(--text-tertiary);
+      font-size: 0.8rem;
+      flex-shrink: 0;
+    }
+
+    input {
+      flex: 1;
+      min-width: 0;
+      border: none;
+      outline: none;
+      background: transparent;
+      padding: 9px 0;
+      font-size: 0.9rem;
+      font-family: inherit;
+      color: var(--text-primary);
+
+      &::placeholder {
+        color: var(--text-tertiary);
+      }
+    }
+
+    button {
+      width: 22px;
+      height: 22px;
+      border: none;
+      border-radius: 50%;
+      background: var(--bg-secondary);
+      color: var(--text-tertiary);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 0.62rem;
+    }
+  }
+
+  &__picker-count {
+    margin-right: auto;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--text-tertiary);
+    padding: 4px 10px;
+    background: $brand-soft;
+    color: var(--brand-primary);
+    border-radius: 999px;
+  }
+
+  &__picker-empty {
+    grid-column: 1 / -1;
+    margin: 0;
+    padding: 16px;
+    color: var(--text-tertiary);
+    font-size: 0.88rem;
+    text-align: center;
+  }
+
+  // Compact pill chip — auto-width, fits many side-by-side.
+  &__avatar-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 12px 5px 5px;
+    background: var(--bg-card);
     border: 1px solid var(--border-color);
     border-radius: 999px;
     color: var(--text-primary);
     font-family: inherit;
     cursor: pointer;
-    transition: border-color 0.18s ease, background 0.18s ease,
-      transform 0.15s ease;
+    transition: border-color 0.15s ease, background 0.15s ease;
     text-align: left;
 
     &:hover {
       border-color: var(--brand-primary);
-      transform: translateY(-1px);
     }
 
     &--active {
@@ -346,47 +442,45 @@ $success: #16a34a;
   }
 
   &__avatar {
-    width: 32px;
-    height: 32px;
+    width: 28px;
+    height: 28px;
     border-radius: 50%;
     background: $brand-soft;
     color: var(--brand-primary);
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    font-size: 0.72rem;
+    font-size: 0.68rem;
     font-weight: 700;
     flex-shrink: 0;
 
     &--sm {
-      width: 26px;
-      height: 26px;
-      font-size: 0.66rem;
+      width: 24px;
+      height: 24px;
+      font-size: 0.62rem;
     }
   }
 
   &__avatar-name {
-    flex: 1;
-    font-size: 0.88rem;
+    font-size: 0.85rem;
+    font-weight: 500;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    max-width: 140px;
   }
 
   &__avatar-tick {
-    position: absolute;
-    right: 10px;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 18px;
-    height: 18px;
+    width: 16px;
+    height: 16px;
     border-radius: 50%;
     background: var(--brand-primary);
     color: white;
-    font-size: 0.55rem;
+    font-size: 0.52rem;
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    flex-shrink: 0;
   }
 
   // ---------- Segmented control: split type ----------

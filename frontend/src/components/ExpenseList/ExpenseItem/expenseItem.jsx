@@ -1,6 +1,6 @@
 import { useState } from "react";
 import "./ExpenseCard.scss";
-import { FaChevronDown, FaUser } from "react-icons/fa";
+import { FaChevronDown, FaUser, FaPen, FaTrash } from "react-icons/fa";
 import { CATEGORY_EMOJI } from "../../../utils/categoryInfer";
 
 const initials = (value) => {
@@ -29,7 +29,7 @@ const formatDate = (iso) => {
   });
 };
 
-const ExpenseCard = ({ expense }) => {
+const ExpenseCard = ({ expense, onEdit, onDelete }) => {
   const [open, setOpen] = useState(false);
 
   const {
@@ -43,12 +43,21 @@ const ExpenseCard = ({ expense }) => {
 
   const emoji = CATEGORY_EMOJI[category] || "✨";
 
+  const toggle = () => setOpen((v) => !v);
+
   return (
     <article className={`expCard ${open ? "expCard--open" : ""}`}>
-      <button
-        type="button"
+      <div
         className="expCard__head"
-        onClick={() => setOpen((v) => !v)}
+        role="button"
+        tabIndex={0}
+        onClick={toggle}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            toggle();
+          }
+        }}
         aria-expanded={open}
       >
         <div className="expCard__icon">
@@ -76,10 +85,41 @@ const ExpenseCard = ({ expense }) => {
           ₹{formatMoney(amount)}
         </div>
 
+        <div className="expCard__icons">
+          {onEdit && (
+            <button
+              type="button"
+              className="expCard__icon-btn"
+              onClick={(e) => {
+                e.stopPropagation();
+                onEdit(expense);
+              }}
+              title="Edit expense"
+              aria-label="Edit expense"
+            >
+              <FaPen />
+            </button>
+          )}
+          {onDelete && (
+            <button
+              type="button"
+              className="expCard__icon-btn expCard__icon-btn--danger"
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete(expense);
+              }}
+              title="Delete expense"
+              aria-label="Delete expense"
+            >
+              <FaTrash />
+            </button>
+          )}
+        </div>
+
         <span className="expCard__chevron" aria-hidden>
           <FaChevronDown />
         </span>
-      </button>
+      </div>
 
       {open && (
         <div className="expCard__body">

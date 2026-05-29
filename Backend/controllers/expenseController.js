@@ -5,6 +5,117 @@ const TOLERANCE = 0.01; // rupees — allow 1 paise of rounding drift
 
 const toCents = (n) => Math.round(Number(n || 0) * 100);
 
+// Shared validation + normalization used by both logExpense and updateExpense.
+// Returns { errors } if invalid; { normalizedSplits, amt } if valid.
+const validateExpensePayload = ({
+  group,
+  amount,
+  splitDetails,
+  spenderId,
+  splitType,
+  settlementExpense,
+}) => {
+  const errors = {};
+
+  const amt = Number(amount);
+  if (!Number.isFinite(amt) || amt <= 0) {
+    errors.amount = "Amount must be greater than zero.";
+  }
+
+  if (!Array.isArray(splitDetails) || splitDetails.length === 0) {
+    errors.splitDetails = "At least one member must be in the split.";
+  }
+
+  const spender = group.members.find(
+    (member) =>
+      member._id.toString() === spenderId?.toString?.() && !member.removed
+  );
+  if (!spender) {
+    errors.spenderId = "Spender is not an active member of this group.";
+  }
+
+  if (Array.isArray(splitDetails) && splitDetails.length > 0) {
+    const invalidMembers = splitDetails.filter(
+      (s) =>
+        !group.members.some(
+          (m) => m._id.toString() === s.member?.toString?.() && !m.removed
+        )
+    );
+    if (invalidMembers.length > 0) {
+      errors.splitDetails =
+        "One or more split members aren't active in this group.";
+    }
+
+    const ids = splitDetails.map((s) => s.member?.toString?.());
+    const dupes = ids.filter((id, i) => ids.indexOf(id) !== i);
+    if (dupes.length > 0) {
+      errors.splitDetails =
+        "Each member can only appear once in the split.";
+    }
+
+    if (splitType === "unequally") {
+      const total = splitDetails.reduce(
+        (acc, s) => acc + Number(s.amount || 0),
+        0
+      );
+      if (Math.abs(total - amt) > TOLERANCE) {
+        errors.unequal = `Per-member amounts sum to ₹${total.toFixed(
+          2
+        )}, expected ₹${amt.toFixed(2)}.`;
+      }
+      if (splitDetails.some((s) => Number(s.amount) < 0)) {
+        errors.unequal = "Per-member amounts can't be negative.";
+      }
+    } else if (splitType === "percentage") {
+      const totalPct = splitDetails.reduce(
+        (acc, s) => acc + Number(s.percentage || 0),
+        0
+      );
+      if (Math.abs(totalPct - 100) > TOLERANCE) {
+        errors.percentage = `Percentages sum to ${totalPct}, expected 100.`;
+      }
+      if (
+        splitDetails.some(
+          (s) => Number(s.percentage) < 0 || Number(s.percentage) > 100
+        )
+      ) {
+        errors.percentage = "Each percentage must be between 0 and 100.";
+      }
+    }
+  }
+
+  if (settlementExpense) {
+    if (splitDetails?.length !== 1) {
+      errors.settlement =
+        "A settlement must record exactly one beneficiary.";
+    } else if (
+      splitDetails[0].member?.toString?.() === spenderId?.toString?.()
+    ) {
+      errors.settlement =
+        "Payer and beneficiary of a settlement must be different.";
+    }
+  }
+
+  if (Object.keys(errors).length > 0) return { errors };
+
+  let normalizedSplits = splitDetails;
+  if (splitType === "equally") {
+    normalizedSplits = splitDetails.map((s) => ({ member: s.member }));
+  } else if (splitType === "unequally") {
+    normalizedSplits = splitDetails.map((s) => ({
+      member: s.member,
+      amount: Number(s.amount),
+    }));
+  } else if (splitType === "percentage") {
+    normalizedSplits = splitDetails.map((s) => ({
+      member: s.member,
+      percentage: Number(s.percentage),
+    }));
+  }
+
+  return { normalizedSplits, amt };
+};
+
 export const getAllExpense = async (req, res) => {
   try {
     const { groupId } = req.params;
@@ -118,125 +229,29 @@ export const logExpense = async (req, res) => {
       });
     }
 
-    const errors = {};
+    const result = validateExpensePayload({
+      group,
+      amount,
+      splitDetails,
+      spenderId,
+      splitType,
+      settlementExpense,
+    });
 
-    const amt = Number(amount);
-    if (!Number.isFinite(amt) || amt <= 0) {
-      errors.amount = "Amount must be greater than zero.";
-    }
-
-    if (!Array.isArray(splitDetails) || splitDetails.length === 0) {
-      errors.splitDetails = "At least one member must be in the split.";
-    }
-
-    const spender = group.members.find(
-      (member) =>
-        member._id.toString() === spenderId?.toString?.() && !member.removed
-    );
-    if (!spender) {
-      errors.spenderId = "Spender is not an active member of this group.";
-    }
-
-    if (Array.isArray(splitDetails) && splitDetails.length > 0) {
-      // All split members must exist AND be active in the group.
-      const invalidMembers = splitDetails.filter(
-        (s) =>
-          !group.members.some(
-            (m) =>
-              m._id.toString() === s.member?.toString?.() && !m.removed
-          )
-      );
-      if (invalidMembers.length > 0) {
-        errors.splitDetails =
-          "One or more split members aren't active in this group.";
-      }
-
-      // No duplicates allowed — same member appearing twice would
-      // silently double-count their share.
-      const ids = splitDetails.map((s) => s.member?.toString?.());
-      const dupes = ids.filter((id, i) => ids.indexOf(id) !== i);
-      if (dupes.length > 0) {
-        errors.splitDetails =
-          "Each member can only appear once in the split.";
-      }
-
-      // Type-specific checks
-      if (splitType === "unequally") {
-        const total = splitDetails.reduce(
-          (acc, s) => acc + Number(s.amount || 0),
-          0
-        );
-        if (Math.abs(total - amt) > TOLERANCE) {
-          errors.unequal = `Per-member amounts sum to ₹${total.toFixed(
-            2
-          )}, expected ₹${amt.toFixed(2)}.`;
-        }
-        if (splitDetails.some((s) => Number(s.amount) < 0)) {
-          errors.unequal = "Per-member amounts can't be negative.";
-        }
-      } else if (splitType === "percentage") {
-        const totalPct = splitDetails.reduce(
-          (acc, s) => acc + Number(s.percentage || 0),
-          0
-        );
-        if (Math.abs(totalPct - 100) > TOLERANCE) {
-          errors.percentage = `Percentages sum to ${totalPct}, expected 100.`;
-        }
-        if (
-          splitDetails.some(
-            (s) => Number(s.percentage) < 0 || Number(s.percentage) > 100
-          )
-        ) {
-          errors.percentage =
-            "Each percentage must be between 0 and 100.";
-        }
-      }
-    }
-
-    // Settlement-specific sanity checks
-    if (settlementExpense) {
-      if (splitDetails?.length !== 1) {
-        errors.settlement =
-          "A settlement must record exactly one beneficiary.";
-      } else if (
-        splitDetails[0].member?.toString?.() === spenderId?.toString?.()
-      ) {
-        errors.settlement =
-          "Payer and beneficiary of a settlement must be different.";
-      }
-    }
-
-    if (Object.keys(errors).length > 0) {
-      return res.status(400).json({ message: "Validation failed", errors });
-    }
-
-    // Normalize splitDetails per type so the stored record is consistent.
-    let normalizedSplits = splitDetails;
-    if (splitType === "equally") {
-      // For equal splits we don't store per-member amount/percentage —
-      // shares are recomputed at read time so they always sum to total
-      // even if the expense amount changes (it doesn't, but defensive).
-      normalizedSplits = splitDetails.map((s) => ({ member: s.member }));
-    } else if (splitType === "unequally") {
-      normalizedSplits = splitDetails.map((s) => ({
-        member: s.member,
-        amount: Number(s.amount),
-      }));
-    } else if (splitType === "percentage") {
-      normalizedSplits = splitDetails.map((s) => ({
-        member: s.member,
-        percentage: Number(s.percentage),
-      }));
+    if (result.errors) {
+      return res
+        .status(400)
+        .json({ message: "Validation failed", errors: result.errors });
     }
 
     const expense = new Expense({
       settlementExpense: !!settlementExpense,
       groupId,
-      amount: amt,
+      amount: result.amt,
       description,
       category,
       spenderId,
-      splitDetails: normalizedSplits,
+      splitDetails: result.normalizedSplits,
       splitType,
       createdBy: req.user._id,
     });
@@ -252,6 +267,103 @@ export const logExpense = async (req, res) => {
       }
       return res.status(400).json({ message: "Validation failed", errors: errs });
     }
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+export const updateExpense = async (req, res) => {
+  try {
+    const { expenseId } = req.params;
+    const {
+      amount,
+      description,
+      category,
+      spenderId,
+      splitDetails,
+      splitType,
+    } = req.body;
+
+    const expense = await Expense.findById(expenseId);
+    if (!expense) {
+      return res.status(404).json({ message: "Expense not found" });
+    }
+
+    const group = await Group.findById(expense.groupId);
+    if (!group) {
+      return res.status(404).json({ message: "Group not found" });
+    }
+
+    if (group.createdBy.toString() !== req.user._id.toString()) {
+      return res.status(403).json({
+        message: "You are not authorized to edit expenses in this group",
+      });
+    }
+
+    const result = validateExpensePayload({
+      group,
+      amount,
+      splitDetails,
+      spenderId,
+      splitType,
+      // Preserve original settlement flag — clients shouldn't be able
+      // to flip a normal expense into a settlement (or vice-versa)
+      // by editing; that would require a delete + re-create.
+      settlementExpense: expense.settlementExpense,
+    });
+
+    if (result.errors) {
+      return res
+        .status(400)
+        .json({ message: "Validation failed", errors: result.errors });
+    }
+
+    expense.amount = result.amt;
+    if (description !== undefined) expense.description = description;
+    if (category !== undefined) expense.category = category;
+    expense.spenderId = spenderId;
+    expense.splitDetails = result.normalizedSplits;
+    expense.splitType = splitType;
+
+    await expense.save();
+    res.status(200).json({ message: "Expense updated", expense });
+  } catch (error) {
+    console.error("Error in updateExpense:", error);
+    if (error.name === "ValidationError") {
+      const errs = {};
+      for (const field of Object.keys(error.errors)) {
+        errs[field] = error.errors[field].message;
+      }
+      return res
+        .status(400)
+        .json({ message: "Validation failed", errors: errs });
+    }
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+export const deleteExpense = async (req, res) => {
+  try {
+    const { expenseId } = req.params;
+    const expense = await Expense.findById(expenseId);
+    if (!expense) {
+      return res.status(404).json({ message: "Expense not found" });
+    }
+
+    const group = await Group.findById(expense.groupId);
+    if (!group) {
+      return res.status(404).json({ message: "Group not found" });
+    }
+
+    if (group.createdBy.toString() !== req.user._id.toString()) {
+      return res.status(403).json({
+        message: "You are not authorized to delete expenses in this group",
+      });
+    }
+
+    await expense.deleteOne();
+    res.status(200).json({ message: "Expense deleted", expenseId });
+  } catch (error) {
+    console.error("Error in deleteExpense:", error);
     res.status(500).json({ message: "Internal server error" });
   }
 };

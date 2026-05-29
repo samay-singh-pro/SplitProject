@@ -20,7 +20,7 @@ $brand-soft: rgba(110, 26, 110, 0.08);
   &__head {
     width: 100%;
     display: grid;
-    grid-template-columns: auto 1fr auto auto;
+    grid-template-columns: auto 1fr auto auto auto;
     align-items: center;
     gap: 14px;
     padding: 14px 16px;
@@ -35,7 +35,7 @@ $brand-soft: rgba(110, 26, 110, 0.08);
       grid-template-columns: auto 1fr auto;
       grid-template-areas:
         "icon info chev"
-        "icon amount amount";
+        "icon amount icons";
       gap: 6px 12px;
 
       .expCard__icon {
@@ -48,9 +48,46 @@ $brand-soft: rgba(110, 26, 110, 0.08);
         grid-area: amount;
         text-align: right;
       }
+      .expCard__icons {
+        grid-area: icons;
+        justify-self: end;
+      }
       .expCard__chevron {
         grid-area: chev;
       }
+    }
+  }
+
+  &__icons {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  &__icon-btn {
+    width: 30px;
+    height: 30px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--border-color);
+    background: var(--bg-secondary);
+    color: var(--text-secondary);
+    border-radius: 8px;
+    font-size: 0.78rem;
+    cursor: pointer;
+    transition: all 0.15s ease;
+
+    &:hover {
+      border-color: var(--brand-primary);
+      color: var(--brand-primary);
+      background: $brand-soft;
+    }
+
+    &--danger:hover {
+      border-color: #ef4444;
+      color: #ef4444;
+      background: rgba(239, 68, 68, 0.08);
     }
   }
 
@@ -209,6 +246,46 @@ $brand-soft: rgba(110, 26, 110, 0.08);
     color: var(--text-tertiary);
     font-size: 0.85rem;
     margin: 0;
+  }
+
+  &__actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border-light);
+  }
+
+  &__action {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    color: var(--text-primary);
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.15s ease;
+
+    svg {
+      font-size: 0.72rem;
+    }
+
+    &:hover {
+      border-color: var(--brand-primary);
+      color: var(--brand-primary);
+    }
+
+    &--danger {
+      &:hover {
+        border-color: #ef4444;
+        color: #ef4444;
+      }
+    }
   }
 }
 

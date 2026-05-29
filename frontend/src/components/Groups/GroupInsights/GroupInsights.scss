@@ -27,7 +27,9 @@ $danger: #ef4444;
   width: 100%;
   max-width: 520px;
   max-height: calc(100vh - 40px);
-  overflow-y: auto;
+  // Scroll moved to __body — cover stays pinned so the group name and
+  // close button remain visible while the user scans the insights.
+  overflow: hidden;
   background: var(--bg-card);
   border: 1px solid var(--border-color);
   border-radius: 20px;
@@ -43,9 +45,10 @@ $danger: #ef4444;
     animation: gi-slide 0.22s cubic-bezier(0.2, 0.8, 0.2, 1);
   }
 
-  // ---------- Cover ----------
+  // ---------- Cover (fixed at top of drawer) ----------
   &__cover {
     position: relative;
+    flex-shrink: 0;
     height: 160px;
     background: linear-gradient(
       135deg,
@@ -155,12 +158,26 @@ $danger: #ef4444;
     overflow: hidden;
   }
 
-  // ---------- Body ----------
+  // ---------- Body (scrolls; cover stays pinned above) ----------
   &__body {
     padding: 18px;
     display: flex;
     flex-direction: column;
     gap: 18px;
+    overflow-y: auto;
+    flex: 1 1 auto;
+    min-height: 0;
+
+    scrollbar-width: thin;
+    scrollbar-color: var(--border-color) transparent;
+
+    &::-webkit-scrollbar {
+      width: 6px;
+    }
+    &::-webkit-scrollbar-thumb {
+      background: var(--border-color);
+      border-radius: 3px;
+    }
   }
 
   &__loading {
@@ -261,16 +278,51 @@ $danger: #ef4444;
     }
   }
 
-  // ---------- Sections ----------
+  // ---------- Sections (collapsible) ----------
   &__section {
     h3 {
-      margin: 0 0 8px;
+      margin: 0;
       font-size: 0.78rem;
       font-weight: 600;
       color: var(--text-secondary);
       text-transform: uppercase;
       letter-spacing: 0.08em;
     }
+  }
+
+  &__section-head {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 4px 8px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    color: inherit;
+    font-family: inherit;
+    text-align: left;
+  }
+
+  &__section-count {
+    padding: 1px 8px;
+    background: $brand-soft;
+    color: var(--brand-primary);
+    border-radius: 999px;
+    font-size: 0.7rem;
+    font-weight: 700;
+  }
+
+  &__section-chev {
+    margin-left: auto;
+    font-size: 0.72rem;
+    color: var(--text-tertiary);
+    transition: transform 0.2s ease;
+  }
+
+  &__section--open &__section-chev {
+    transform: rotate(180deg);
+    color: var(--brand-primary);
   }
 
   &__balances,

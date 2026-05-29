@@ -21,6 +21,7 @@ import {
   FaPen,
   FaTrash,
   FaExclamationTriangle,
+  FaChevronDown,
 } from "react-icons/fa";
 
 const formatMoney = (n) =>
@@ -46,6 +47,10 @@ const GroupInsights = ({ group, open, onClose, onNavigate }) => {
   const [editOpen, setEditOpen] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  // Collapsible sections — settlements open by default (it's the action
+  // item), balances collapsed (secondary info, can grow long).
+  const [balancesOpen, setBalancesOpen] = useState(false);
+  const [settlesOpen, setSettlesOpen] = useState(true);
 
   useEffect(() => {
     if (open && group?._id) {
@@ -234,69 +239,105 @@ const GroupInsights = ({ group, open, onClose, onNavigate }) => {
                 )}
               </div>
 
-              {/* Balances */}
+              {/* Balances (collapsible) */}
               {balanceRows.length > 0 && (
-                <div className="groupIns__section">
-                  <h3>Net balances</h3>
-                  <ul className="groupIns__balances">
-                    {balanceRows.map((row) => {
-                      const isOwed = row.net > 0.005;
-                      const owes = row.net < -0.005;
-                      return (
-                        <li key={row.id}>
-                          <span className="groupIns__avatar">
-                            {initials(row.name)}
-                          </span>
-                          <span className="groupIns__bal-name">
-                            {row.name}
-                          </span>
-                          {isOwed ? (
-                            <span className="groupIns__bal-amt groupIns__bal-amt--pos">
-                              +₹{formatMoney(row.net)}
+                <div
+                  className={`groupIns__section ${
+                    balancesOpen ? "groupIns__section--open" : ""
+                  }`}
+                >
+                  <button
+                    type="button"
+                    className="groupIns__section-head"
+                    onClick={() => setBalancesOpen((v) => !v)}
+                    aria-expanded={balancesOpen}
+                  >
+                    <h3>Net balances</h3>
+                    <span className="groupIns__section-count">
+                      {balanceRows.length}
+                    </span>
+                    <FaChevronDown className="groupIns__section-chev" />
+                  </button>
+                  {balancesOpen && (
+                    <ul className="groupIns__balances">
+                      {balanceRows.map((row) => {
+                        const isOwed = row.net > 0.005;
+                        const owes = row.net < -0.005;
+                        return (
+                          <li key={row.id}>
+                            <span className="groupIns__avatar">
+                              {initials(row.name)}
                             </span>
-                          ) : owes ? (
-                            <span className="groupIns__bal-amt groupIns__bal-amt--neg">
-                              −₹{formatMoney(Math.abs(row.net))}
+                            <span className="groupIns__bal-name">
+                              {row.name}
                             </span>
-                          ) : (
-                            <span className="groupIns__bal-amt groupIns__bal-amt--zero">
-                              settled
-                            </span>
-                          )}
-                        </li>
-                      );
-                    })}
-                  </ul>
+                            {isOwed ? (
+                              <span className="groupIns__bal-amt groupIns__bal-amt--pos">
+                                +₹{formatMoney(row.net)}
+                              </span>
+                            ) : owes ? (
+                              <span className="groupIns__bal-amt groupIns__bal-amt--neg">
+                                −₹{formatMoney(Math.abs(row.net))}
+                              </span>
+                            ) : (
+                              <span className="groupIns__bal-amt groupIns__bal-amt--zero">
+                                settled
+                              </span>
+                            )}
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  )}
                 </div>
               )}
 
-              {/* Settlements preview */}
+              {/* Settlements preview (collapsible) */}
               {settlements.length > 0 ? (
-                <div className="groupIns__section">
-                  <h3>Pending settlements</h3>
-                  <ul className="groupIns__settles">
-                    {settlements.slice(0, 5).map((s, i) => (
-                      <li key={i}>
-                        <span className="groupIns__avatar">
-                          {initials(s.fromName)}
-                        </span>
-                        <FaArrowRight />
-                        <span className="groupIns__avatar groupIns__avatar--alt">
-                          {initials(s.toName)}
-                        </span>
-                        <span className="groupIns__settle-text">
-                          <strong>{s.fromName}</strong> → {s.toName}
-                        </span>
-                        <strong className="groupIns__settle-amt">
-                          ₹{formatMoney(s.amount)}
-                        </strong>
-                      </li>
-                    ))}
-                  </ul>
-                  {settlements.length > 5 && (
-                    <p className="groupIns__more">
-                      +{settlements.length - 5} more in the full report.
-                    </p>
+                <div
+                  className={`groupIns__section ${
+                    settlesOpen ? "groupIns__section--open" : ""
+                  }`}
+                >
+                  <button
+                    type="button"
+                    className="groupIns__section-head"
+                    onClick={() => setSettlesOpen((v) => !v)}
+                    aria-expanded={settlesOpen}
+                  >
+                    <h3>Pending settlements</h3>
+                    <span className="groupIns__section-count">
+                      {settlements.length}
+                    </span>
+                    <FaChevronDown className="groupIns__section-chev" />
+                  </button>
+                  {settlesOpen && (
+                    <>
+                      <ul className="groupIns__settles">
+                        {settlements.slice(0, 5).map((s, i) => (
+                          <li key={i}>
+                            <span className="groupIns__avatar">
+                              {initials(s.fromName)}
+                            </span>
+                            <FaArrowRight />
+                            <span className="groupIns__avatar groupIns__avatar--alt">
+                              {initials(s.toName)}
+                            </span>
+                            <span className="groupIns__settle-text">
+                              <strong>{s.fromName}</strong> → {s.toName}
+                            </span>
+                            <strong className="groupIns__settle-amt">
+                              ₹{formatMoney(s.amount)}
+                            </strong>
+                          </li>
+                        ))}
+                      </ul>
+                      {settlements.length > 5 && (
+                        <p className="groupIns__more">
+                          +{settlements.length - 5} more in the full report.
+                        </p>
+                      )}
+                    </>
                   )}
                 </div>
               ) : (

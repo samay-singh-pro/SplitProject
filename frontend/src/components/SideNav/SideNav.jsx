@@ -29,7 +29,7 @@ const SideNav = ({ onNavClick, active }) => {
   return (
     <aside className="sideNav" aria-label="Primary navigation">
       <div className="sideNav__brand">
-        <span className="sideNav__label">Menu</span>
+        <span className="sideNav__label">Workspace</span>
       </div>
 
       <nav className="sideNav__list">

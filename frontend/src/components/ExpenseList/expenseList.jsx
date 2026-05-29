@@ -1,9 +1,11 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchGroups } from "../../store/groupSlice";
 import "./expenseList.scss";
 import ExpenseCard from "./ExpenseItem/expenseItem";
-import { getAllExpenses } from "../../store/expenseSlice";
+import EditExpenseModal from "./EditExpenseModal/EditExpenseModal";
+import { getAllExpenses, deleteExpense } from "../../store/expenseSlice";
+import { fetchGroupStats } from "../../store/statsSlice";
 import GroupSelector from "../shared/GroupSelector/GroupSelector";
 import { useCurrentGroup } from "../../hooks/useCurrentGroup";
 import Fab from "../shared/Fab/Fab";
@@ -16,9 +18,14 @@ import {
   FaSortAmountDown,
   FaSortAmountUp,
   FaCalendarAlt,
+  FaTrash,
+  FaExclamationTriangle,
+  FaChevronDown,
+  FaFilter,
+  FaCheck,
 } from "react-icons/fa";
 
-import { ALL_CATEGORIES } from "../../utils/categoryInfer";
+import { ALL_CATEGORIES, CATEGORY_EMOJI } from "../../utils/categoryInfer";
 
 const CATEGORIES = ["All", ...ALL_CATEGORIES];
 
@@ -44,6 +51,26 @@ const ExpenseListPage = () => {
   const [activeCategory, setActiveCategory] = useState("All");
   const [sort, setSort] = useState("newest");
   const [quickAddOpen, setQuickAddOpen] = useState(false);
+  const [editing, setEditing] = useState(null);
+  const [confirmDelete, setConfirmDelete] = useState(null);
+  const [deleting, setDeleting] = useState(false);
+  const [catOpen, setCatOpen] = useState(false);
+  const catRef = useRef(null);
+
+  useEffect(() => {
+    if (!catOpen) return;
+    const handler = (e) => {
+      if (catRef.current && !catRef.current.contains(e.target)) {
+        setCatOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    document.addEventListener("touchstart", handler);
+    return () => {
+      document.removeEventListener("mousedown", handler);
+      document.removeEventListener("touchstart", handler);
+    };
+  }, [catOpen]);
 
   useEffect(() => {
     dispatch(fetchGroups());
@@ -58,6 +85,19 @@ const ExpenseListPage = () => {
   };
 
   const currentGroup = groups.find((g) => g._id === selectedGroup);
+
+  const handleConfirmDelete = () => {
+    if (!confirmDelete) return;
+    setDeleting(true);
+    dispatch(deleteExpense(confirmDelete._id)).then((action) => {
+      setDeleting(false);
+      if (action.meta.requestStatus === "fulfilled") {
+        setConfirmDelete(null);
+        // Stats need refreshing — balances change when an expense is removed.
+        if (selectedGroup) dispatch(fetchGroupStats(selectedGroup));
+      }
+    });
+  };
 
   const filtered = useMemo(() => {
     if (!expenses || expenses.length === 0) return [];
@@ -150,6 +190,64 @@ const ExpenseListPage = () => {
               )}
             </div>
 
+            <div className="expList__cat-dd" ref={catRef}>
+              <button
+                type="button"
+                className={`expList__cat-trigger ${
+                  catOpen ? "expList__cat-trigger--open" : ""
+                }`}
+                onClick={() => setCatOpen((v) => !v)}
+                aria-haspopup="listbox"
+                aria-expanded={catOpen}
+              >
+                <FaFilter />
+                <span className="expList__cat-trigger-label">
+                  {activeCategory === "All"
+                    ? "All categories"
+                    : activeCategory}
+                </span>
+                {activeCategory !== "All" && (
+                  <span className="expList__cat-trigger-emoji">
+                    {CATEGORY_EMOJI[activeCategory] || ""}
+                  </span>
+                )}
+                <FaChevronDown className="expList__cat-trigger-chev" />
+              </button>
+
+              {catOpen && (
+                <div className="expList__cat-menu" role="listbox">
+                  {CATEGORIES.map((c) => {
+                    const selected = activeCategory === c;
+                    return (
+                      <button
+                        type="button"
+                        key={c}
+                        role="option"
+                        aria-selected={selected}
+                        className={`expList__cat-opt ${
+                          selected ? "expList__cat-opt--selected" : ""
+                        }`}
+                        onClick={() => {
+                          setActiveCategory(c);
+                          setCatOpen(false);
+                        }}
+                      >
+                        <span className="expList__cat-opt-emoji">
+                          {c === "All" ? "🗂️" : CATEGORY_EMOJI[c] || "✨"}
+                        </span>
+                        <span className="expList__cat-opt-name">
+                          {c === "All" ? "All categories" : c}
+                        </span>
+                        {selected && (
+                          <FaCheck className="expList__cat-opt-check" />
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
             <div className="expList__sort">
               {SORTS.map((s) => (
                 <button
@@ -167,21 +265,6 @@ const ExpenseListPage = () => {
                 </button>
               ))}
             </div>
-          </div>
-
-          <div className="expList__categories">
-            {CATEGORIES.map((c) => (
-              <button
-                key={c}
-                type="button"
-                className={`expList__cat ${
-                  activeCategory === c ? "expList__cat--active" : ""
-                }`}
-                onClick={() => setActiveCategory(c)}
-              >
-                {c}
-              </button>
-            ))}
           </div>
 
           {hasExpenses && (
@@ -232,6 +315,8 @@ const ExpenseListPage = () => {
                 <ExpenseCard
                   key={expense._id || i}
                   expense={expense}
+                  onEdit={(e) => setEditing(e)}
+                  onDelete={(e) => setConfirmDelete(e)}
                 />
               ))
             )}
@@ -248,6 +333,54 @@ const ExpenseListPage = () => {
         onClose={() => setQuickAddOpen(false)}
         group={currentGroup}
       />
+
+      <EditExpenseModal
+        open={!!editing}
+        onClose={() => setEditing(null)}
+        expense={editing}
+        group={currentGroup}
+      />
+
+      {confirmDelete && (
+        <div
+          className="expList__confirm"
+          role="dialog"
+          onClick={() => !deleting && setConfirmDelete(null)}
+        >
+          <div
+            className="expList__confirm-panel"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="expList__confirm-icon">
+              <FaExclamationTriangle />
+            </div>
+            <h3>Delete this expense?</h3>
+            <p>
+              <strong>{confirmDelete.description || "Untitled"}</strong> for ₹
+              {Number(confirmDelete.amount || 0).toFixed(2)} will be removed
+              and balances will be recomputed. This can&apos;t be undone.
+            </p>
+            <div className="expList__confirm-actions">
+              <button
+                type="button"
+                className="ng-btn ng-btn--ghost"
+                onClick={() => setConfirmDelete(null)}
+                disabled={deleting}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="expList__confirm-delete"
+                onClick={handleConfirmDelete}
+                disabled={deleting}
+              >
+                <FaTrash /> {deleting ? "Deleting…" : "Delete"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

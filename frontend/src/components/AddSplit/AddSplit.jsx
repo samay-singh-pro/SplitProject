@@ -17,7 +17,13 @@ import {
   FaUserCheck,
   FaMagic,
   FaChevronDown,
+  FaSearch,
+  FaTimes,
 } from "react-icons/fa";
+
+// Above this count, the member pickers show a search box + scrollable cap
+// so 10+ members don't sprawl across the form.
+const PICKER_SEARCH_THRESHOLD = 5;
 import {
   inferCategory,
   CATEGORY_EMOJI,
@@ -78,6 +84,8 @@ const AddSplit = () => {
   const [unequalSplits, setUnequalSplits] = useState({});
   const [percentageSplits, setPercentageSplits] = useState({});
   const [errors, setErrors] = useState({});
+  const [paidSearch, setPaidSearch] = useState("");
+  const [splitSearch, setSplitSearch] = useState("");
 
   const handleDescriptionChange = (val) => {
     setDescription(val);
@@ -97,6 +105,24 @@ const AddSplit = () => {
   // Active members only — removed members can't take part in new expenses.
   const members = (group?.members || []).filter((m) => !m.removed);
   const amountNum = parseFloat(amount) || 0;
+  const needsSearch = members.length > PICKER_SEARCH_THRESHOLD;
+
+  const filterMembers = (query) => {
+    const q = query.trim().toLowerCase();
+    if (!q) return members;
+    return members.filter((m) => m.name?.toLowerCase().includes(q));
+  };
+
+  const paidFiltered = useMemo(
+    () => filterMembers(paidSearch),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [paidSearch, members]
+  );
+  const splitFiltered = useMemo(
+    () => filterMembers(splitSearch),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [splitSearch, members]
+  );
 
   const handleGroupChange = (id) => {
     setSelectedGroup(id);
@@ -382,32 +408,57 @@ const AddSplit = () => {
               </div>
             ) : (
               <>
+                {needsSearch && (
+                  <div className="addSplit__picker-search">
+                    <FaSearch />
+                    <input
+                      type="text"
+                      value={paidSearch}
+                      onChange={(e) => setPaidSearch(e.target.value)}
+                      placeholder="Search members…"
+                    />
+                    {paidSearch && (
+                      <button
+                        type="button"
+                        onClick={() => setPaidSearch("")}
+                        aria-label="Clear search"
+                      >
+                        <FaTimes />
+                      </button>
+                    )}
+                  </div>
+                )}
+
                 <div className="addSplit__avatars">
-                  {members.map((m) => (
-                    <button
-                      type="button"
-                      key={m._id}
-                      className={`addSplit__avatar-chip ${
-                        spender === m._id
-                          ? "addSplit__avatar-chip--active"
-                          : ""
-                      }`}
-                      onClick={() => {
-                        setSpender(m._id);
-                        setErrors((p) => ({ ...p, spender: undefined }));
-                      }}
-                    >
-                      <span className="addSplit__avatar">
-                        {initials(m.name)}
-                      </span>
-                      <span className="addSplit__avatar-name">{m.name}</span>
-                      {spender === m._id && (
-                        <span className="addSplit__avatar-tick">
-                          <FaCheck />
+                  {paidFiltered.length === 0 ? (
+                    <p className="addSplit__picker-empty">No matches.</p>
+                  ) : (
+                    paidFiltered.map((m) => (
+                      <button
+                        type="button"
+                        key={m._id}
+                        className={`addSplit__avatar-chip ${
+                          spender === m._id
+                            ? "addSplit__avatar-chip--active"
+                            : ""
+                        }`}
+                        onClick={() => {
+                          setSpender(m._id);
+                          setErrors((p) => ({ ...p, spender: undefined }));
+                        }}
+                      >
+                        <span className="addSplit__avatar">
+                          {initials(m.name)}
                         </span>
-                      )}
-                    </button>
-                  ))}
+                        <span className="addSplit__avatar-name">{m.name}</span>
+                        {spender === m._id && (
+                          <span className="addSplit__avatar-tick">
+                            <FaCheck />
+                          </span>
+                        )}
+                      </button>
+                    ))
+                  )}
                 </div>
                 {errors.spender && (
                   <span className="ng-field__error ng-field__error--block">
@@ -429,6 +480,9 @@ const AddSplit = () => {
 
             {group && members.length > 0 && (
               <div className="addSplit__bulk">
+                <span className="addSplit__picker-count">
+                  {splitAmong.length} of {members.length} selected
+                </span>
                 <button type="button" onClick={selectAll}>
                   <FaUserCheck /> Select all
                 </button>
@@ -446,30 +500,57 @@ const AddSplit = () => {
               </div>
             ) : (
               <>
-                <div className="addSplit__avatars">
-                  {members.map((m) => {
-                    const active = splitAmong.includes(m._id);
-                    return (
+                {needsSearch && (
+                  <div className="addSplit__picker-search">
+                    <FaSearch />
+                    <input
+                      type="text"
+                      value={splitSearch}
+                      onChange={(e) => setSplitSearch(e.target.value)}
+                      placeholder="Search members…"
+                    />
+                    {splitSearch && (
                       <button
                         type="button"
-                        key={m._id}
-                        className={`addSplit__avatar-chip ${
-                          active ? "addSplit__avatar-chip--active" : ""
-                        }`}
-                        onClick={() => toggleSplitAmong(m._id)}
+                        onClick={() => setSplitSearch("")}
+                        aria-label="Clear search"
                       >
-                        <span className="addSplit__avatar">
-                          {initials(m.name)}
-                        </span>
-                        <span className="addSplit__avatar-name">{m.name}</span>
-                        {active && (
-                          <span className="addSplit__avatar-tick">
-                            <FaCheck />
-                          </span>
-                        )}
+                        <FaTimes />
                       </button>
-                    );
-                  })}
+                    )}
+                  </div>
+                )}
+
+                <div className="addSplit__avatars">
+                  {splitFiltered.length === 0 ? (
+                    <p className="addSplit__picker-empty">No matches.</p>
+                  ) : (
+                    splitFiltered.map((m) => {
+                      const active = splitAmong.includes(m._id);
+                      return (
+                        <button
+                          type="button"
+                          key={m._id}
+                          className={`addSplit__avatar-chip ${
+                            active ? "addSplit__avatar-chip--active" : ""
+                          }`}
+                          onClick={() => toggleSplitAmong(m._id)}
+                        >
+                          <span className="addSplit__avatar">
+                            {initials(m.name)}
+                          </span>
+                          <span className="addSplit__avatar-name">
+                            {m.name}
+                          </span>
+                          {active && (
+                            <span className="addSplit__avatar-tick">
+                              <FaCheck />
+                            </span>
+                          )}
+                        </button>
+                      );
+                    })
+                  )}
                 </div>
                 {errors.splitAmong && (
                   <span className="ng-field__error ng-field__error--block">
