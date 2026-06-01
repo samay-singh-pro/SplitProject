@@ -12,9 +12,10 @@ export const useTheme = () => {
 
 export const ThemeProvider = ({ children }) => {
   const [theme, setTheme] = useState(() => {
-    // Get theme from localStorage or default to 'light'
+    // Use the saved preference if the user has chosen one; otherwise
+    // default to dark mode.
     const savedTheme = localStorage.getItem('splitit-theme');
-    return savedTheme || 'light';
+    return savedTheme || 'dark';
   });
 
   useEffect(() => {
