@@ -3,28 +3,35 @@ import { useDispatch, useSelector } from "react-redux";
 import "./NewGroup.scss";
 import { createGroup, resetGroupState } from "../../../store/groupSlice";
 import { toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
 import {
   FaUsers,
   FaTag,
-  FaImage,
   FaPlus,
   FaTimes,
   FaCheck,
   FaArrowRight,
   FaPenFancy,
   FaUser,
+  FaEnvelope,
+  FaCoins,
   FaCloudUploadAlt,
   FaTrashAlt,
   FaExclamationCircle,
   FaMagic,
   FaChevronDown,
+  FaUserCheck,
 } from "react-icons/fa";
 import {
   inferCategory,
   CATEGORY_EMOJI,
   ALL_CATEGORIES,
 } from "../../../utils/categoryInfer";
+import { CURRENCIES, CURRENCY_SYMBOLS } from "../../../utils/currency";
+
+// Normalize email the same way the backend does. The email→user lookup
+// + invite creation happens on submit, server-side.
+const normalizeEmail = (raw) => String(raw || "").trim().toLowerCase();
+const isValidEmail = (e) => /^\S+@\S+\.\S+$/.test(e);
 
 const MAX_IMAGE_MB = 5;
 
@@ -40,15 +47,29 @@ const initials = (value) => {
 };
 
 const NewGroup = () => {
+  // The new group's currency defaults to the creator's personal
+  // preference, but is a per-GROUP setting from here on (everyone sees
+  // it, no conversion). Fixed once the group is created.
+  const { userInfo } = useSelector((s) => s.login);
   const [groupName, setGroupName] = useState("");
   const [category, setCategory] = useState("Others");
   const [categoryAuto, setCategoryAuto] = useState(true);
   const [showCategoryPicker, setShowCategoryPicker] = useState(false);
+  const [currency, setCurrency] = useState(userInfo?.currency || "INR");
+  const [showCurrencyPicker, setShowCurrencyPicker] = useState(false);
   const [purpose, setPurpose] = useState("");
   const [groupImage, setGroupImage] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
+  // members is an array of objects so we can carry an email alongside
+  // the display name. Shape: { name, email? }. The email→user lookup +
+  // invite happen server-side on submit.
   const [members, setMembers] = useState([]);
   const [memberInput, setMemberInput] = useState("");
+  const [emailInput, setEmailInput] = useState("");
+  // Add the creator as a member so their own spends in this group also
+  // land in their Personal tab. On by default — most people are part of
+  // the groups they create — but they can opt out.
+  const [includeMe, setIncludeMe] = useState(true);
   const [isDragging, setIsDragging] = useState(false);
   const [errors, setErrors] = useState({});
   const fileInputRef = useRef(null);
@@ -64,8 +85,6 @@ const NewGroup = () => {
   const dispatch = useDispatch();
   const { loading, error, success } = useSelector((state) => state.group);
 
-  const selectedCategoryEmoji = CATEGORY_EMOJI[category] || null;
-
   const clearError = (field) => {
     setErrors((prev) => {
       if (!prev[field]) return prev;
@@ -76,22 +95,44 @@ const NewGroup = () => {
   };
 
   const handleAddMember = () => {
-    const value = memberInput.trim();
-    if (!value) return;
-    if (members.some((m) => m.toLowerCase() === value.toLowerCase())) {
-      setErrors((prev) => ({
-        ...prev,
-        members: "That name has already been added.",
+    const name = memberInput.trim();
+    const email = emailInput.trim() ? normalizeEmail(emailInput) : "";
+    if (!name) {
+      setErrors((p) => ({ ...p, members: "Add a name for this person." }));
+      return;
+    }
+    if (email && !isValidEmail(email)) {
+      setErrors((p) => ({
+        ...p,
+        members: "That doesn't look like a valid email.",
       }));
       return;
     }
-    setMembers([...members, value]);
+
+    // Block duplicates by either name OR email.
+    const dupName = members.some(
+      (m) => m.name.toLowerCase() === name.toLowerCase()
+    );
+    const dupEmail = email && members.some((m) => m.email === email);
+    if (dupName) {
+      setErrors((p) => ({ ...p, members: "That name has already been added." }));
+      return;
+    }
+    if (dupEmail) {
+      setErrors((p) => ({ ...p, members: "That email has already been added." }));
+      return;
+    }
+
+    setMembers([...members, { name, email: email || null }]);
     setMemberInput("");
+    setEmailInput("");
     clearError("members");
   };
 
+  // Enter on either input adds the member; convenient on desktop and
+  // mobile where the "Add" tap target may be small.
   const handleMemberKey = (e) => {
-    if (e.key === "Enter" || e.key === ",") {
+    if (e.key === "Enter") {
       e.preventDefault();
       handleAddMember();
     }
@@ -144,9 +185,13 @@ const NewGroup = () => {
     setCategory("Others");
     setCategoryAuto(true);
     setShowCategoryPicker(false);
+    setCurrency(userInfo?.currency || "INR");
+    setShowCurrencyPicker(false);
+    setIncludeMe(true);
     clearImage();
     setMembers([]);
     setMemberInput("");
+    setEmailInput("");
     setErrors({});
   };
 
@@ -168,8 +213,19 @@ const NewGroup = () => {
     formData.append("name", groupName.trim());
     formData.append("description", purpose.trim());
     formData.append("category", category);
+    formData.append("currency", currency);
+    formData.append("includeMe", includeMe);
     if (groupImage) formData.append("image", groupImage);
-    members.forEach((member) => formData.append("members", member));
+    // Each member is JSON-encoded {name, email?}. The backend parses
+    // these, matches emails to existing users, and creates invites
+    // server-side. Members without an email (or whose email doesn't
+    // match) save as offline and never block group creation.
+    members.forEach((m) =>
+      formData.append(
+        "members",
+        JSON.stringify({ name: m.name, email: m.email || undefined })
+      )
+    );
     dispatch(createGroup(formData));
   };
 
@@ -190,10 +246,6 @@ const NewGroup = () => {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [success, error]);
-
-  const previewName = groupName || "Your group name";
-  const previewPurpose =
-    purpose || "Add a short description so members know the context.";
 
   return (
     <div className="newGroup">
@@ -219,6 +271,8 @@ const NewGroup = () => {
           className="newGroup__card newGroup__form"
           noValidate
         >
+          <div className="newGroup__cols">
+            <div className="newGroup__col">
           <section className="ng-section">
             <div className="ng-section__head">
               <span className="ng-section__step">1</span>
@@ -318,6 +372,47 @@ const NewGroup = () => {
                 </div>
               )}
             </div>
+
+            <div className="newGroup__autocat">
+              <label className="newGroup__autocat-label">
+                <FaCoins /> Currency
+              </label>
+              <button
+                type="button"
+                className={`newGroup__autotag ${
+                  showCurrencyPicker ? "newGroup__autotag--open" : ""
+                }`}
+                onClick={() => setShowCurrencyPicker((v) => !v)}
+              >
+                <span>{CURRENCY_SYMBOLS[currency] || "¤"}</span>
+                <strong>{currency}</strong>
+                <FaChevronDown className="newGroup__autotag-chev" />
+              </button>
+              {showCurrencyPicker && (
+                <div className="ng-chips">
+                  {CURRENCIES.map((c) => (
+                    <button
+                      type="button"
+                      key={c.code}
+                      className={`ng-chip ${
+                        currency === c.code ? "ng-chip--active" : ""
+                      }`}
+                      onClick={() => {
+                        setCurrency(c.code);
+                        setShowCurrencyPicker(false);
+                      }}
+                    >
+                      <span className="ng-chip__emoji">{c.symbol}</span>
+                      {c.code}
+                    </button>
+                  ))}
+                </div>
+              )}
+              <span className="ng-field__hint">
+                Everyone in this group sees amounts in this currency — it
+                can&apos;t be changed once the group is created.
+              </span>
+            </div>
           </section>
 
           <section className="ng-section">
@@ -383,6 +478,8 @@ const NewGroup = () => {
             )}
           </section>
 
+            </div>
+            <div className="newGroup__col">
           <section className="ng-section">
             <div className="ng-section__head">
               <span className="ng-section__step">3</span>
@@ -391,23 +488,49 @@ const NewGroup = () => {
               </div>
             </div>
 
-            <div
-              className={`ng-member-input ${
-                errors.members ? "ng-member-input--error" : ""
-              }`}
-            >
-              <FaUser />
+            <label className="ng-includeme">
               <input
-                type="text"
-                placeholder="Type a name and press Enter"
-                value={memberInput}
-                onChange={(e) => {
-                  setMemberInput(e.target.value);
-                  if (errors.members) clearError("members");
-                }}
-                onKeyDown={handleMemberKey}
-                maxLength={40}
+                type="checkbox"
+                checked={includeMe}
+                onChange={(e) => setIncludeMe(e.target.checked)}
               />
+              <span className="ng-includeme__text">
+                <strong>Include me in this group</strong>
+                <small>
+                  Expenses you pay here also show up in your Personal tab.
+                </small>
+              </span>
+            </label>
+
+            <div className="ng-member-add">
+              <div
+                className={`ng-member-input ${
+                  errors.members ? "ng-member-input--error" : ""
+                }`}
+              >
+                <FaUser />
+                <input
+                  type="text"
+                  placeholder="Name"
+                  value={memberInput}
+                  onChange={(e) => {
+                    setMemberInput(e.target.value);
+                    if (errors.members) clearError("members");
+                  }}
+                  onKeyDown={handleMemberKey}
+                  maxLength={40}
+                />
+              </div>
+              <div className="ng-member-input ng-member-input--phone">
+                <FaEnvelope />
+                <input
+                  type="email"
+                  placeholder="Email (optional)"
+                  value={emailInput}
+                  onChange={(e) => setEmailInput(e.target.value)}
+                  onKeyDown={handleMemberKey}
+                />
+              </div>
               <button
                 type="button"
                 onClick={handleAddMember}
@@ -418,6 +541,15 @@ const NewGroup = () => {
                 <span>Add</span>
               </button>
             </div>
+
+            <p className="ng-member-hint">
+              <FaUserCheck />
+              <span>
+                If their email is on splitit they&apos;ll get an invite. If
+                not, they&apos;re added as an offline member.
+              </span>
+            </p>
+
             {errors.members && (
               <span className="ng-field__error ng-field__error--block">
                 <FaExclamationCircle />
@@ -428,15 +560,25 @@ const NewGroup = () => {
             {members.length > 0 ? (
               <ul className="ng-members">
                 {members.map((member, index) => (
-                  <li key={`${member}-${index}`} className="ng-member">
+                  <li
+                    key={`${member.name}-${index}`}
+                    className="ng-member"
+                  >
                     <span className="ng-member__avatar">
-                      {initials(member)}
+                      {initials(member.name)}
                     </span>
-                    <span className="ng-member__name">{member}</span>
+                    <span className="ng-member__name">
+                      {member.name}
+                      {member.email && (
+                        <small className="ng-member__phone">
+                          {member.email}
+                        </small>
+                      )}
+                    </span>
                     <button
                       type="button"
                       onClick={() => handleRemoveMember(index)}
-                      aria-label={`Remove ${member}`}
+                      aria-label={`Remove ${member.name}`}
                     >
                       <FaTimes />
                     </button>
@@ -446,10 +588,12 @@ const NewGroup = () => {
             ) : (
               <div className="ng-members__empty">
                 <FaUsers />
-                <span>No members yet — that’s okay, you can add them later.</span>
+                <span>No members yet — that&apos;s okay, you can add them later.</span>
               </div>
             )}
           </section>
+            </div>
+          </div>
 
           <div className="ng-actions">
             <button
@@ -478,73 +622,6 @@ const NewGroup = () => {
             </button>
           </div>
         </form>
-
-        <aside className="newGroup__card newGroup__preview" aria-label="Preview">
-          <div className="ng-preview__label">Live preview</div>
-
-          <div className="ng-preview__card">
-            <div className="ng-preview__cover">
-              {imagePreview ? (
-                <img src={imagePreview} alt="" />
-              ) : (
-                <div className="ng-preview__cover-fallback">
-                  <FaImage />
-                </div>
-              )}
-              {category && (
-                <span className="ng-preview__category">
-                  <span>{selectedCategoryEmoji}</span>
-                  {category}
-                </span>
-              )}
-            </div>
-
-            <div className="ng-preview__body">
-              <h3 className={!groupName ? "is-placeholder" : ""}>
-                {previewName}
-              </h3>
-              <p className={!purpose ? "is-placeholder" : ""}>
-                {previewPurpose}
-              </p>
-
-              <div className="ng-preview__members">
-                <div className="ng-preview__avatars">
-                  {members.slice(0, 4).map((m, i) => (
-                    <span key={`${m}-${i}`} className="ng-preview__avatar">
-                      {initials(m)}
-                    </span>
-                  ))}
-                  {members.length > 4 && (
-                    <span className="ng-preview__avatar ng-preview__avatar--more">
-                      +{members.length - 4}
-                    </span>
-                  )}
-                  {members.length === 0 && (
-                    <span className="ng-preview__avatar ng-preview__avatar--empty">
-                      <FaUsers />
-                    </span>
-                  )}
-                </div>
-                <span className="ng-preview__count">
-                  {members.length}{" "}
-                  {members.length === 1 ? "member" : "members"}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          <ul className="ng-tips">
-            <li>
-              <FaCheck /> Only the name and category are required to create a group.
-            </li>
-            <li>
-              <FaCheck /> Add members as plain names now — invites can come later.
-            </li>
-            <li>
-              <FaCheck /> Everything here can be edited after the group is created.
-            </li>
-          </ul>
-        </aside>
       </div>
     </div>
   );

@@ -1,118 +1,63 @@
-import React, { useState } from "react";
-import logo from "../assets/logo.png";
+import { useState, useEffect } from "react";
 import "./Navbar.scss";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faHome,
-  faInfoCircle,
-  faConciergeBell,
-  faSignOutAlt,
-  faSignInAlt,
-  faEnvelope,
-  faTachometerAlt,
-} from "@fortawesome/free-solid-svg-icons";
-import { Link, useNavigate } from "react-router-dom";
-import { useDispatch, useSelector } from "react-redux";
-import { logout, logoutUser } from "../store/loginSlice";
-import ThemeToggle from "./ThemeToggle/ThemeToggle";
+import { Link, useLocation } from "react-router-dom";
+import { useSelector } from "react-redux";
+import ProfileMenu from "./ProfileMenu/ProfileMenu";
 
-const Navbar = () => {
-  const [isOpen, setIsOpen] = useState(false);
-  const dispatch = useDispatch();
-  const navigate = useNavigate();
+// Lean top bar.
+// - Logged out (on landing): brand + Theme + "Sign in" / "Get started" CTAs.
+// - Logged in (dashboard): brand + Theme + Logout. Nav happens via SideNav,
+//   so we don't bloat the top bar with redundant links.
+// - On auth pages (Login/Signup): minimal — brand + Theme only. The two-pane
+//   auth screens own their own CTAs.
+const Navbar = ({ onDashboard = false }) => {
+  const location = useLocation();
   const { isAuthenticated } = useSelector((state) => state.login);
 
-  const toggleMenu = () => {
-    setIsOpen(!isOpen);
-  };
+  const [scrolled, setScrolled] = useState(false);
 
-  const handleLogout = () => {
-    dispatch(logoutUser());
-    dispatch(logout());
-    setIsOpen(!isOpen);
-    navigate("/login");
-  };
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 4);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  const onAuthPage =
+    location.pathname === "/login" || location.pathname === "/signup";
 
   return (
-    <>
-      <nav className="navbar">
-        <div className="navbar__logo">
-          <img src={logo} alt="logo" />
-        </div>
-        <div className="navbar__links stylish-border">
-          <ul>
-            <li>
-              <Link to="/">Home</Link>
-            </li>
-            <li>
-              <Link to="/about">About us</Link>
-            </li>
-            <li>
-              <Link to="/offerings">Our offerings</Link>
-            </li>
-            <li>
-              <Link to="/contact">Contact</Link>
-            </li>
-          </ul>
-        </div>
-        <div className="navbar__actions">
-          <ThemeToggle />
-          <div className="navbar__login">
-            {isAuthenticated ? (
-              <button onClick={handleLogout}>Logout</button>
-            ) : (
-              <button>
-                <Link to="/login">Login</Link>
-              </button>
-            )}
-          </div>
-        </div>
-        <div className="menu-icon" onClick={toggleMenu}>
-          {!isOpen ? <div>&#9776;</div> : <div>&#10006;</div>}
-        </div>
+    <nav
+      className={`navbar ${scrolled ? "navbar--scrolled" : ""} ${
+        onDashboard ? "navbar--on-dashboard" : ""
+      }`}
+    >
+      <Link
+        to={isAuthenticated ? "/dashboard" : "/"}
+        className="navbar__brand"
+        aria-label="splitit home"
+      >
+        <span className="brandMark">splitit</span>
+      </Link>
 
-        {/* Side menu */}
-        <nav className={`side-menu ${isOpen ? "open" : "closed"}`}>
-          <div className="title">Welcome to SplitIt</div>
-          <ul>
-            <li onClick={toggleMenu}>
-              <FontAwesomeIcon className="icon home" icon={faHome} />
-              <Link to="/">Home</Link>
-            </li>
-            {isAuthenticated ? (
-              <li onClick={toggleMenu}>
-                <FontAwesomeIcon  className="icon dash" icon={faTachometerAlt}/><Link to='/dashboard'>Dashboard</Link>
-              </li>
-            ) : (
-              ""
-            )}
-            <li onClick={toggleMenu}>
-              <FontAwesomeIcon className="icon about" icon={faInfoCircle} />{" "}
-              <Link to="/about">About us</Link>
-            </li>
-            <li onClick={toggleMenu}>
-              <FontAwesomeIcon className="icon offer" icon={faConciergeBell} />{" "}
-              <Link to="/offerings">Our offerings</Link>
-            </li>
-            <li onClick={toggleMenu}>
-              <FontAwesomeIcon className="icon contact" icon={faEnvelope} />{" "}
-              <Link to="/contact"> Contact Us</Link>
-            </li>
-            {isAuthenticated ? (
-              <li onClick={handleLogout}>
-                <FontAwesomeIcon className="icon logout" icon={faSignOutAlt} />{" "}
-                <Link> Log Out</Link>
-              </li>
-            ) : (
-              <li onClick={toggleMenu}>
-                <FontAwesomeIcon className="icon logout" icon={faSignInAlt} />{" "}
-                <Link to="login"> Log in</Link>
-              </li>
-            )}
-          </ul>
-        </nav>
-      </nav>
-    </>
+      <div className="navbar__actions">
+        {!isAuthenticated && !onAuthPage && (
+          <>
+            <Link to="/login" className="navbar__link">
+              Sign in
+            </Link>
+            <Link to="/signup" className="navbar__cta">
+              Get started
+            </Link>
+          </>
+        )}
+
+        {/* Theme + sign-out now live inside the ProfileMenu popover.
+            Keeping them off the top bar removes the accidental-logout
+            risk and de-clutters the public chrome. */}
+        {isAuthenticated && <ProfileMenu align="right" />}
+      </div>
+    </nav>
   );
 };
 

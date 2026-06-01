@@ -11,12 +11,13 @@
   // Mobile / tablet: the SideNav is a fixed bottom tab bar, so the
   // dashboard collapses to a single column and we reserve space at the
   // bottom of the main content so the tab bar never covers content.
+  // 84px accounts for the actual tab bar height (icon + label + padding).
   @media (max-width: 850px) {
     flex-direction: column;
 
     &__main {
       width: 100%;
-      padding-bottom: calc(76px + env(safe-area-inset-bottom, 0px));
+      padding-bottom: calc(84px + env(safe-area-inset-bottom, 0px));
     }
   }
 }

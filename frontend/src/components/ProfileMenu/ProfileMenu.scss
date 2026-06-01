@@ -1,0 +1,710 @@
+// ---------- ProfileMenu (avatar trigger + popover) ----------
+
+$brand-soft: rgba(110, 26, 110, 0.08);
+
+.profileMenu {
+  position: relative;
+  display: inline-flex;
+
+  // -------- Trigger (avatar button) --------
+  &__trigger {
+    position: relative;
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    border: 1px solid var(--border-color);
+    background: var(--bg-card);
+    padding: 0;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: border-color 0.18s ease, box-shadow 0.18s ease,
+      transform 0.15s ease;
+
+    &:hover {
+      border-color: var(--brand-primary);
+    }
+
+    &--open {
+      border-color: var(--brand-primary);
+      box-shadow: 0 0 0 3px $brand-soft;
+    }
+  }
+
+  // Pending-invite badge — small dot with the count, top-right of
+  // the avatar. Uses the brand accent so it reads as friendly, not
+  // alarming (those are still rose for errors).
+  &__badge {
+    position: absolute;
+    top: -2px;
+    right: -2px;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    border-radius: 999px;
+    background: var(--brand-primary);
+    color: white;
+    font-size: 0.66rem;
+    font-weight: 800;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 0 0 2px var(--bg-card);
+    pointer-events: none;
+    letter-spacing: -0.02em;
+  }
+
+  &__avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: linear-gradient(
+      135deg,
+      var(--brand-primary),
+      var(--brand-secondary)
+    );
+    color: white;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+
+    &--lg {
+      width: 48px;
+      height: 48px;
+      font-size: 1rem;
+    }
+  }
+
+  // -------- Popover panel --------
+  // `position: fixed` + JS-computed coords so the popover renders
+  // relative to the viewport, not relative to any ancestor. This
+  // sidesteps stacking-context and overflow-clip issues that came
+  // from the panel being nested inside the SideNav rail.
+  &__panel {
+    position: fixed;
+    z-index: 1100;
+    width: 320px;
+    max-width: calc(100vw - 24px);
+    max-height: calc(100vh - 96px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 14px;
+    box-shadow: 0 18px 44px rgba(0, 0, 0, 0.28),
+      0 6px 14px rgba(0, 0, 0, 0.12);
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    animation: pm-pop 0.16s ease-out;
+
+    scrollbar-width: thin;
+    scrollbar-color: var(--border-color) transparent;
+
+    &::-webkit-scrollbar {
+      width: 4px;
+    }
+    &::-webkit-scrollbar-thumb {
+      background: var(--border-color);
+      border-radius: 2px;
+    }
+
+    @media (max-width: 640px) {
+      // The portal computes a left coord from the trigger; clamp the
+      // width so the popover always fits with a margin on each side.
+      width: calc(100vw - 24px);
+      max-width: calc(100vw - 24px);
+    }
+  }
+
+  // -------- Inline variant (desktop rail morph) --------
+  // No trigger / no overlay — the body renders directly inside the
+  // SideNav once the rail flips to "account mode". Just a flex column;
+  // the rail host owns sizing, scrolling, and the morph animation.
+  &--inline {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    width: 100%;
+  }
+
+  // -------- Identity block --------
+  &__id {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 6px 6px 8px;
+  }
+
+  &__id-meta {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    gap: 2px;
+
+    strong {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    small {
+      font-size: 0.78rem;
+      color: var(--text-tertiary);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+  }
+
+  &__divider {
+    height: 1px;
+    background: var(--border-light);
+    margin: 4px 0;
+  }
+
+  // -------- Invitations panel --------
+  &__invites {
+    display: flex;
+    flex-direction: column;
+  }
+
+  &__invites-toggle {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    padding: 8px 8px;
+    background: transparent;
+    border: none;
+    border-radius: 10px;
+    color: inherit;
+    cursor: pointer;
+    font-family: inherit;
+    text-align: left;
+    transition: background 0.15s ease;
+
+    &:hover {
+      background: $brand-soft;
+    }
+  }
+
+  &__invites-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 9px;
+    background: $brand-soft;
+    color: var(--brand-primary);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.85rem;
+    flex-shrink: 0;
+  }
+
+  &__invites-label {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+
+    strong {
+      font-size: 0.88rem;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    small {
+      font-size: 0.74rem;
+      color: var(--text-tertiary);
+      margin-top: 1px;
+    }
+  }
+
+  &__invites-list {
+    list-style: none;
+    padding: 4px;
+    margin: 4px 0 8px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    max-height: 280px;
+    overflow-y: auto;
+    animation: pm-pop 0.16s ease-out;
+  }
+
+  &__invite {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 8px 8px 10px;
+    background: var(--bg-card);
+    border-radius: 8px;
+  }
+
+  &__invite-emoji {
+    width: 32px;
+    height: 32px;
+    border-radius: 9px;
+    background: $brand-soft;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+  }
+
+  &__invite-meta {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+
+    strong {
+      font-size: 0.88rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    small {
+      font-size: 0.74rem;
+      color: var(--text-tertiary);
+      margin-top: 1px;
+
+      em {
+        font-style: normal;
+        color: var(--text-secondary);
+        font-weight: 600;
+      }
+    }
+  }
+
+  &__invite-actions {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  &__invite-decline {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+    background: transparent;
+    color: var(--text-tertiary);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7rem;
+    transition: border-color 0.15s ease, color 0.15s ease;
+
+    &:hover {
+      border-color: var(--accent-danger);
+      color: var(--accent-danger);
+    }
+  }
+
+  &__invite-accept {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 6px 11px;
+    border: none;
+    border-radius: 8px;
+    background: var(--brand-primary);
+    color: white;
+    font-family: inherit;
+    font-size: 0.78rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.15s ease;
+
+    svg {
+      font-size: 0.62rem;
+    }
+
+    &:hover {
+      background: var(--brand-hover);
+    }
+  }
+
+  // -------- Row (label + value control) --------
+  &__row {
+    display: grid;
+    grid-template-columns: minmax(0, auto) minmax(0, 1fr);
+    align-items: center;
+    gap: 8px;
+    padding: 8px 6px;
+    border-radius: 10px;
+    position: relative;
+
+    &-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.84rem;
+      color: var(--text-secondary);
+      font-weight: 500;
+
+      svg {
+        color: var(--brand-primary);
+        font-size: 0.78rem;
+      }
+    }
+
+    &-value {
+      justify-self: end;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 10px;
+      background: var(--bg-secondary);
+      border: 1px solid transparent;
+      border-radius: 8px;
+      color: var(--text-primary);
+      font-family: inherit;
+      font-size: 0.84rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: border-color 0.15s ease, color 0.15s ease;
+      max-width: 100%;
+
+      &:hover {
+        border-color: var(--brand-primary);
+        color: var(--brand-primary);
+      }
+
+      &--placeholder {
+        color: var(--text-tertiary);
+        font-weight: 500;
+
+        svg:first-child {
+          font-size: 0.66rem;
+        }
+      }
+    }
+
+    &-icon {
+      font-size: 0.68rem;
+      color: var(--text-tertiary);
+      transition: transform 0.2s ease;
+
+      &--open {
+        transform: rotate(180deg);
+        color: var(--brand-primary);
+      }
+    }
+  }
+
+  // -------- Inline phone editor --------
+  &__edit {
+    justify-self: end;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 4px 3px 10px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--brand-primary);
+    border-radius: 8px;
+
+    @media (max-width: 640px) {
+      justify-self: stretch;
+      width: 100%;
+    }
+
+    input {
+      width: 130px;
+      border: none;
+      background: transparent;
+      outline: none;
+      font-family: inherit;
+      font-size: 0.84rem;
+      color: var(--text-primary);
+      padding: 4px 0;
+
+      &::placeholder {
+        color: var(--text-tertiary);
+      }
+
+      @media (max-width: 640px) {
+        // 16px prevents iOS zoom-on-focus; min-width:0 lets the field
+        // shrink inside the row so the save button stays on screen.
+        font-size: 16px;
+        width: 100%;
+        min-width: 0;
+      }
+    }
+  }
+
+  &__edit-save {
+    width: 24px;
+    height: 24px;
+    border: none;
+    border-radius: 6px;
+    background: var(--brand-primary);
+    color: white;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.66rem;
+    transition: background 0.15s ease;
+
+    &:hover {
+      background: var(--brand-hover);
+    }
+  }
+
+  // -------- Currency dropdown --------
+  &__currency-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 22px;
+    height: 22px;
+    padding: 0 6px;
+    border-radius: 6px;
+    background: $brand-soft;
+    color: var(--brand-primary);
+    font-weight: 700;
+    font-size: 0.78rem;
+  }
+
+  &__dropdown {
+    grid-column: 1 / -1;
+    margin-top: 6px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    padding: 4px;
+    max-height: 220px;
+    overflow-y: auto;
+    box-shadow: var(--shadow-sm);
+    animation: pm-pop 0.14s ease-out;
+  }
+
+  &__dropdown-opt {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 10px;
+    background: transparent;
+    border: none;
+    border-radius: 8px;
+    color: var(--text-primary);
+    font-family: inherit;
+    font-size: 0.84rem;
+    text-align: left;
+    cursor: pointer;
+    transition: background 0.12s ease;
+
+    &:hover {
+      background: var(--bg-card);
+    }
+
+    small {
+      color: var(--text-tertiary);
+      font-size: 0.74rem;
+      margin-left: auto;
+    }
+
+    &--selected {
+      background: $brand-soft;
+      color: var(--brand-primary);
+      font-weight: 600;
+
+      &:hover {
+        background: $brand-soft;
+      }
+
+      small {
+        color: var(--brand-primary);
+      }
+    }
+  }
+
+  &__dropdown-label {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex: 1;
+    min-width: 0;
+  }
+
+  &__dropdown-check {
+    color: var(--brand-primary);
+    font-size: 0.72rem;
+    flex-shrink: 0;
+  }
+
+  // -------- Theme switch --------
+  // <button> defaults vary across browsers (Safari iOS adds inner
+  // padding, Chrome centers content). Forcing flex layout + an
+  // appearance reset gives the knob a predictable starting position
+  // so the transform: translateX(20px) on "--on" lands correctly.
+  &__switch {
+    justify-self: end;
+    flex-shrink: 0;
+    width: 44px;
+    height: 24px;
+    border-radius: 999px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    padding: 0;
+    margin: 0;
+    cursor: pointer;
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-start;
+    appearance: none;
+    -webkit-appearance: none;
+    -webkit-tap-highlight-color: transparent;
+    transition: background 0.2s ease, border-color 0.2s ease;
+    box-sizing: border-box;
+
+    &:focus {
+      outline: none;
+    }
+    &:focus-visible {
+      box-shadow: 0 0 0 3px $brand-soft;
+    }
+
+    &--on {
+      background: var(--brand-primary);
+      border-color: var(--brand-primary);
+    }
+  }
+
+  &__switch-knob {
+    // Anchored from the LEFT inside the flex container. Width 20 +
+    // 1px gap from left edge keeps it inside the rounded 24px-tall
+    // track. The "--on" state translates exactly the remaining gap
+    // (44 - 20 - 1*2 = 22 → use 20 to leave 1px breathing room).
+    width: 20px;
+    height: 20px;
+    margin-left: 1px;
+    border-radius: 50%;
+    background: white;
+    color: var(--brand-primary);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.6rem;
+    transition: transform 0.2s ease, color 0.2s ease;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+    flex-shrink: 0;
+
+    .profileMenu__switch--on & {
+      transform: translateX(20px);
+    }
+  }
+
+  // -------- Sign out (low-prominence) --------
+  &__signout {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 8px 10px;
+    background: transparent;
+    border: none;
+    border-radius: 8px;
+    color: var(--text-tertiary);
+    font-family: inherit;
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    text-align: left;
+    transition: background 0.15s ease, color 0.15s ease;
+
+    svg {
+      font-size: 0.78rem;
+    }
+
+    &:hover {
+      background: var(--accent-danger-soft);
+      color: var(--accent-danger);
+    }
+  }
+
+  &__confirm {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 8px 10px;
+    background: var(--accent-danger-soft);
+    border: 1px solid var(--accent-danger-soft-strong);
+    border-radius: 10px;
+
+    > span {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--accent-danger);
+    }
+  }
+
+  &__confirm-actions {
+    display: flex;
+    gap: 6px;
+
+    button {
+      flex: 1;
+      padding: 7px 10px;
+      border-radius: 8px;
+      font-family: inherit;
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s ease, color 0.15s ease;
+
+      &:first-child {
+        border: 1px solid var(--border-color);
+        background: var(--bg-card);
+        color: var(--text-secondary);
+
+        &:hover {
+          color: var(--text-primary);
+          border-color: var(--text-secondary);
+        }
+      }
+    }
+  }
+
+  &__confirm-yes {
+    border: none;
+    background: var(--accent-danger);
+    color: white;
+
+    &:hover {
+      filter: brightness(1.1);
+    }
+  }
+}
+
+@keyframes pm-pop {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+

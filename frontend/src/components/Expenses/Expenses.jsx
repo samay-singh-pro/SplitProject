@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchGroups } from "../../store/groupSlice";
 import "./Expenses.scss";
@@ -8,9 +8,14 @@ import { addExpense, getAllExpenses } from "../../store/expenseSlice";
 import { toast } from "react-toastify";
 import { useTheme } from "../../contexts/ThemeContext";
 import { useCurrentGroup } from "../../hooks/useCurrentGroup";
+import { useScope } from "../../hooks/useScope";
 import GroupSelector from "../shared/GroupSelector/GroupSelector";
+import ScopeToggle from "../shared/ScopeToggle/ScopeToggle";
+import PersonalReport from "../Personal/PersonalReport";
+import { getPersonal } from "../../store/personalSlice";
 import Fab from "../shared/Fab/Fab";
 import QuickAddExpense from "../QuickAddExpense/QuickAddExpense";
+import { getCurrencySymbol, formatMoney } from "../../utils/currency";
 import {
   FaArrowRight,
   FaArrowLeft,
@@ -23,13 +28,8 @@ import {
   FaListUl,
   FaTimes,
   FaChevronDown,
+  FaCheck,
 } from "react-icons/fa";
-
-const formatMoney = (n) =>
-  Number(n || 0).toLocaleString(undefined, {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  });
 
 const initials = (value) => {
   if (!value) return "?";
@@ -55,6 +55,21 @@ const CHART_PALETTE = [
   "#84cc16",
 ];
 
+// Returns true when the viewport is phone-sized. Used to render charts
+// at a tighter height so the report fits in one screen.
+const usePhone = () => {
+  const [match, setMatch] = useState(() =>
+    typeof window === "undefined" ? false : window.matchMedia("(max-width: 640px)").matches
+  );
+  useEffect(() => {
+    const mql = window.matchMedia("(max-width: 640px)");
+    const handler = (e) => setMatch(e.matches);
+    mql.addEventListener("change", handler);
+    return () => mql.removeEventListener("change", handler);
+  }, []);
+  return match;
+};
+
 const Expenses = () => {
   const dispatch = useDispatch();
   const { groups } = useSelector((state) => state.group);
@@ -62,8 +77,11 @@ const Expenses = () => {
   const { expenses } = useSelector((state) => state.expense);
   const { theme } = useTheme();
   const isDark = theme === "dark";
+  const isPhone = usePhone();
+  const chartHeight = isPhone ? 200 : 320;
 
   const [selectedGroup, setSelectedGroup] = useCurrentGroup();
+  const [scope, setScope] = useScope();
   const [settleOpen, setSettleOpen] = useState(false);
   const [settlePrefill, setSettlePrefill] = useState(null);
   const [payer, setPayer] = useState("");
@@ -71,21 +89,34 @@ const Expenses = () => {
   const [settleAmount, setSettleAmount] = useState("");
   const [quickAddOpen, setQuickAddOpen] = useState(false);
   const [expandedMember, setExpandedMember] = useState(null);
-  // Two views only: "simple" (pair-wise, real expense history) and
-  // "simplified" (greedy minimum-transaction set). Same balances, two
-  // ways of paying it off.
-  const [settleView, setSettleView] = useState("simple");
+  // Two views only: "simplified" (greedy minimum-transaction set, the
+  // default) and "simple" (pair-wise "Direct" view that mirrors the real
+  // expense history). Same balances, two ways of paying it off.
+  const [settleView, setSettleView] = useState("simplified");
+  const [payerOpen, setPayerOpen] = useState(false);
+  const [beneficiaryOpen, setBeneficiaryOpen] = useState(false);
+  const payerRef = useRef(null);
+  const beneficiaryRef = useRef(null);
 
   useEffect(() => {
     dispatch(fetchGroups());
   }, [dispatch]);
 
+  // Load the personal feed for the Personal report.
   useEffect(() => {
-    if (selectedGroup) {
+    if (scope === "personal") dispatch(getPersonal());
+  }, [scope, dispatch]);
+
+  // Only fetch once we've confirmed the selected group is actually one
+  // the current user belongs to. A group id can linger in localStorage
+  // from a previous session/account; fetching it would 403/404 and spam
+  // "failed to load" toasts at a user who did nothing wrong.
+  useEffect(() => {
+    if (selectedGroup && groups.some((g) => g._id === selectedGroup)) {
       dispatch(fetchGroupStats(selectedGroup));
       dispatch(getAllExpenses(selectedGroup));
     }
-  }, [selectedGroup, dispatch]);
+  }, [selectedGroup, groups, dispatch]);
 
   const handleGroupChange = (id) => {
     setSelectedGroup(id);
@@ -94,6 +125,9 @@ const Expenses = () => {
 
   const group = groups.find((g) => g._id === selectedGroup);
   const members = group?.members || [];
+  // Amounts render in the GROUP's currency (chosen by the owner at
+  // creation) — never the viewer's personal preference.
+  const symbol = getCurrencySymbol(group?.currency);
 
   // ---------- Derived data ----------
   const pieData = useMemo(() => {
@@ -266,7 +300,7 @@ const Expenses = () => {
       theme: { mode: isDark ? "dark" : "light" },
       tooltip: {
         theme: isDark ? "dark" : "light",
-        y: { formatter: (v) => `₹${formatMoney(v)}` },
+        y: { formatter: (v) => `${symbol}${formatMoney(v)}` },
       },
       grid: {
         borderColor: isDark ? "#2e2e3e" : "#e0e0e0",
@@ -274,7 +308,7 @@ const Expenses = () => {
       },
       colors: CHART_PALETTE,
     }),
-    [isDark]
+    [isDark, symbol]
   );
 
   const donutOptions = useMemo(
@@ -296,7 +330,7 @@ const Expenses = () => {
                 label: "Total spent",
                 color: isDark ? "#b8b8c8" : "#757575",
                 fontSize: "12px",
-                formatter: () => `₹${formatMoney(totalSpent)}`,
+                formatter: () => `${symbol}${formatMoney(totalSpent)}`,
               },
               value: {
                 color: isDark ? "#e8e8f0" : "#1a1a1a",
@@ -310,7 +344,7 @@ const Expenses = () => {
       stroke: { width: 0 },
       dataLabels: { enabled: false },
     }),
-    [baseChartOptions, pieData, totalSpent, isDark]
+    [baseChartOptions, pieData, totalSpent, isDark, symbol]
   );
 
   const contributionsOptions = useMemo(
@@ -335,11 +369,11 @@ const Expenses = () => {
       yaxis: {
         labels: {
           style: { colors: isDark ? "#b8b8c8" : "#555" },
-          formatter: (v) => `₹${Math.round(v)}`,
+          formatter: (v) => `${symbol}${Math.round(v)}`,
         },
       },
     }),
-    [baseChartOptions, barContributions, isDark]
+    [baseChartOptions, barContributions, isDark, symbol]
   );
 
   const categoryOptions = useMemo(
@@ -356,7 +390,7 @@ const Expenses = () => {
       },
       dataLabels: {
         enabled: true,
-        formatter: (v) => `₹${formatMoney(v)}`,
+        formatter: (v) => `${symbol}${formatMoney(v)}`,
         style: { fontSize: "11px", colors: ["#fff"] },
       },
       legend: { show: false },
@@ -368,7 +402,7 @@ const Expenses = () => {
         labels: { style: { colors: isDark ? "#b8b8c8" : "#555" } },
       },
     }),
-    [baseChartOptions, categoryData, isDark]
+    [baseChartOptions, categoryData, isDark, symbol]
   );
 
   // ---------- Settle handlers ----------
@@ -390,7 +424,40 @@ const Expenses = () => {
   const closeSettle = () => {
     setSettleOpen(false);
     setSettlePrefill(null);
+    setPayerOpen(false);
+    setBeneficiaryOpen(false);
   };
+
+  // Click-outside handlers for dropdowns
+  useEffect(() => {
+    if (!payerOpen) return;
+    const handler = (e) => {
+      if (payerRef.current && !payerRef.current.contains(e.target)) {
+        setPayerOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    document.addEventListener("touchstart", handler);
+    return () => {
+      document.removeEventListener("mousedown", handler);
+      document.removeEventListener("touchstart", handler);
+    };
+  }, [payerOpen]);
+
+  useEffect(() => {
+    if (!beneficiaryOpen) return;
+    const handler = (e) => {
+      if (beneficiaryRef.current && !beneficiaryRef.current.contains(e.target)) {
+        setBeneficiaryOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    document.addEventListener("touchstart", handler);
+    return () => {
+      document.removeEventListener("mousedown", handler);
+      document.removeEventListener("touchstart", handler);
+    };
+  }, [beneficiaryOpen]);
 
   const handleSettleSubmit = (e) => {
     e?.preventDefault?.();
@@ -414,10 +481,18 @@ const Expenses = () => {
       ],
       splitType: "unequally",
     };
-    dispatch(addExpense(expenseData)).then(() => {
-      closeSettle();
-      dispatch(fetchGroupStats(selectedGroup));
-      dispatch(getAllExpenses(selectedGroup));
+    dispatch(addExpense(expenseData)).then((action) => {
+      if (action.meta.requestStatus === "fulfilled") {
+        closeSettle();
+        dispatch(fetchGroupStats(selectedGroup));
+        dispatch(getAllExpenses(selectedGroup));
+      } else {
+        // e.g. a member trying to settle a pair they're not part of —
+        // the server rejects it; surface that instead of silently closing.
+        toast.error(
+          action.payload?.message || "Couldn't record this settlement."
+        );
+      }
     });
   };
 
@@ -434,21 +509,30 @@ const Expenses = () => {
           <FaArrowRight />
           <span className="active">Reports</span>
         </div>
-        <h1 className="reports__title">Reports</h1>
+        <h1 className="reports__title">
+          {scope === "personal" ? "My spending" : "Reports"}
+        </h1>
         <p className="reports__subtitle">
-          See where the money went and who still owes what.
+          {scope === "personal"
+            ? "Your own spending this month, at a glance."
+            : "See where the money went and who still owes what."}
         </p>
       </header>
 
       <div className="reports__group-row">
-        <GroupSelector
-          groups={groups}
-          selectedId={selectedGroup}
-          onSelect={handleGroupChange}
-        />
+        <ScopeToggle scope={scope} onChange={setScope} />
+        {scope === "group" && (
+          <GroupSelector
+            groups={groups}
+            selectedId={selectedGroup}
+            onSelect={handleGroupChange}
+          />
+        )}
       </div>
 
-      {!selectedGroup ? (
+      {scope === "personal" ? (
+        <PersonalReport />
+      ) : !group ? (
         <div className="reports__placeholder">
           <div className="reports__placeholder-icon">
             <FaChartPie />
@@ -472,7 +556,7 @@ const Expenses = () => {
               <div>
                 <span className="reports__kpi-label">Total spent</span>
                 <strong className="reports__kpi-value">
-                  ₹{formatMoney(totalSpent)}
+                  {symbol}{formatMoney(totalSpent)}
                 </strong>
               </div>
             </div>
@@ -522,7 +606,7 @@ const Expenses = () => {
               <div>
                 <span className="reports__kpi-label">Outstanding</span>
                 <strong className="reports__kpi-value">
-                  ₹{formatMoney(totalOutstanding)}
+                  {symbol}{formatMoney(totalOutstanding)}
                 </strong>
               </div>
             </div>
@@ -567,19 +651,19 @@ const Expenses = () => {
                         <div className="reports__balance-meta">
                           <strong>{row.name}</strong>
                           <small>
-                            paid ₹{formatMoney(row.totalPaid)} · share ₹
+                            paid {symbol}{formatMoney(row.totalPaid)} · share {symbol}
                             {formatMoney(row.totalShare)}
                           </small>
                         </div>
 
                         {isOwed ? (
                           <span className="reports__balance-amt reports__balance-amt--pos">
-                            + ₹{formatMoney(bal)}
+                            + {symbol}{formatMoney(bal)}
                             <small>is owed</small>
                           </span>
                         ) : owes ? (
                           <span className="reports__balance-amt reports__balance-amt--neg">
-                            − ₹{formatMoney(Math.abs(bal))}
+                            − {symbol}{formatMoney(Math.abs(bal))}
                             <small>owes</small>
                           </span>
                         ) : (
@@ -602,7 +686,7 @@ const Expenses = () => {
                             <h4>
                               <FaArrowRight />
                               Lent
-                              <em>₹{formatMoney(lentTotal)}</em>
+                              <em>{symbol}{formatMoney(lentTotal)}</em>
                             </h4>
                             {lent.length === 0 ? (
                               <p className="reports__balance-drill-empty">
@@ -618,7 +702,7 @@ const Expenses = () => {
                                     <span className="reports__balance-drill-for">
                                       {x.description}
                                     </span>
-                                    <strong>₹{formatMoney(x.amount)}</strong>
+                                    <strong>{symbol}{formatMoney(x.amount)}</strong>
                                   </li>
                                 ))}
                               </ul>
@@ -629,7 +713,7 @@ const Expenses = () => {
                             <h4>
                               <FaArrowLeft />
                               Borrowed
-                              <em>₹{formatMoney(borrowedTotal)}</em>
+                              <em>{symbol}{formatMoney(borrowedTotal)}</em>
                             </h4>
                             {borrowed.length === 0 ? (
                               <p className="reports__balance-drill-empty">
@@ -645,7 +729,7 @@ const Expenses = () => {
                                     <span className="reports__balance-drill-for">
                                       {x.description}
                                     </span>
-                                    <strong>₹{formatMoney(x.amount)}</strong>
+                                    <strong>{symbol}{formatMoney(x.amount)}</strong>
                                   </li>
                                 ))}
                               </ul>
@@ -679,31 +763,19 @@ const Expenses = () => {
                   </p>
                 )}
               </div>
-              <button
-                type="button"
-                className="reports__settle-cta"
-                onClick={() => openSettle()}
-              >
-                <FaExchangeAlt /> Record a settlement
-              </button>
+              {oweData.length > 0 && (
+                <button
+                  type="button"
+                  className="reports__settle-cta"
+                  onClick={() => openSettle()}
+                >
+                  <FaExchangeAlt /> Record a settlement
+                </button>
+              )}
             </div>
 
             {canSimplify && (
               <div className="reports__settle-toggle" role="tablist">
-                <button
-                  type="button"
-                  role="tab"
-                  aria-selected={settleView === "simple"}
-                  className={`reports__settle-tab ${
-                    settleView === "simple"
-                      ? "reports__settle-tab--active"
-                      : ""
-                  }`}
-                  onClick={() => setSettleView("simple")}
-                >
-                  Simple
-                  <span>{simpleSettlements.length}</span>
-                </button>
                 <button
                   type="button"
                   role="tab"
@@ -718,6 +790,20 @@ const Expenses = () => {
                 >
                   Simplified
                   <span>{simplifiedSettlements.length}</span>
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={settleView === "simple"}
+                  className={`reports__settle-tab ${
+                    settleView === "simple"
+                      ? "reports__settle-tab--active"
+                      : ""
+                  }`}
+                  onClick={() => setSettleView("simple")}
+                >
+                  Direct
+                  <span>{simpleSettlements.length}</span>
                 </button>
               </div>
             )}
@@ -743,7 +829,7 @@ const Expenses = () => {
                         </small>
                       </div>
                       <span className="reports__settle-group-total">
-                        ₹{formatMoney(g.total)}
+                        {symbol}{formatMoney(g.total)}
                       </span>
                     </div>
 
@@ -761,7 +847,7 @@ const Expenses = () => {
                             {item.toName}
                           </span>
                           <strong className="reports__settle-item-amt">
-                            ₹{formatMoney(item.amount)}
+                            {symbol}{formatMoney(item.amount)}
                           </strong>
                           <button
                             type="button"
@@ -790,7 +876,7 @@ const Expenses = () => {
                   options={donutOptions}
                   series={pieData.map((p) => p.value)}
                   type="donut"
-                  height={320}
+                  height={chartHeight}
                 />
               </div>
             )}
@@ -809,7 +895,7 @@ const Expenses = () => {
                     },
                   ]}
                   type="bar"
-                  height={320}
+                  height={chartHeight}
                 />
               </div>
             )}
@@ -828,7 +914,11 @@ const Expenses = () => {
                     },
                   ]}
                   type="bar"
-                  height={Math.max(220, categoryData.length * 36 + 60)}
+                  height={Math.max(
+                    isPhone ? 180 : 220,
+                    categoryData.length * (isPhone ? 28 : 36) +
+                      (isPhone ? 40 : 60)
+                  )}
                 />
               </div>
             )}
@@ -862,32 +952,102 @@ const Expenses = () => {
 
             <div className="ng-field">
               <label>Who paid</label>
-              <select
-                value={payer}
-                onChange={(e) => setPayer(e.target.value)}
-              >
-                <option value="">Select member</option>
-                {members.map((m) => (
-                  <option key={m._id} value={m._id}>
-                    {m.name}
-                  </option>
-                ))}
-              </select>
+              <div className="reports__modal-dd" ref={payerRef}>
+                <button
+                  type="button"
+                  className={`reports__modal-dd-trigger ${
+                    payerOpen ? "reports__modal-dd-trigger--open" : ""
+                  }`}
+                  onClick={() => setPayerOpen((v) => !v)}
+                  aria-haspopup="listbox"
+                  aria-expanded={payerOpen}
+                >
+                  <span className="reports__modal-dd-label">
+                    {payer ? members.find((m) => m._id === payer)?.name : "Select member"}
+                  </span>
+                  <FaChevronDown className="reports__modal-dd-chev" />
+                </button>
+                {payerOpen && (
+                  <div className="reports__modal-dd-menu" role="listbox">
+                    {members.map((m) => {
+                      const selected = payer === m._id;
+                      return (
+                        <button
+                          type="button"
+                          key={m._id}
+                          role="option"
+                          aria-selected={selected}
+                          className={`reports__modal-dd-opt ${
+                            selected ? "reports__modal-dd-opt--selected" : ""
+                          }`}
+                          onClick={() => {
+                            setPayer(m._id);
+                            setPayerOpen(false);
+                          }}
+                        >
+                          <span className="reports__modal-dd-avatar">
+                            {initials(m.name)}
+                          </span>
+                          <span className="reports__modal-dd-opt-name">{m.name}</span>
+                          {selected && (
+                            <FaCheck className="reports__modal-dd-opt-check" />
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
             </div>
 
             <div className="ng-field">
               <label>Who received</label>
-              <select
-                value={beneficiary}
-                onChange={(e) => setBeneficiary(e.target.value)}
-              >
-                <option value="">Select member</option>
-                {members.map((m) => (
-                  <option key={m._id} value={m._id}>
-                    {m.name}
-                  </option>
-                ))}
-              </select>
+              <div className="reports__modal-dd" ref={beneficiaryRef}>
+                <button
+                  type="button"
+                  className={`reports__modal-dd-trigger ${
+                    beneficiaryOpen ? "reports__modal-dd-trigger--open" : ""
+                  }`}
+                  onClick={() => setBeneficiaryOpen((v) => !v)}
+                  aria-haspopup="listbox"
+                  aria-expanded={beneficiaryOpen}
+                >
+                  <span className="reports__modal-dd-label">
+                    {beneficiary ? members.find((m) => m._id === beneficiary)?.name : "Select member"}
+                  </span>
+                  <FaChevronDown className="reports__modal-dd-chev" />
+                </button>
+                {beneficiaryOpen && (
+                  <div className="reports__modal-dd-menu" role="listbox">
+                    {members.map((m) => {
+                      const selected = beneficiary === m._id;
+                      return (
+                        <button
+                          type="button"
+                          key={m._id}
+                          role="option"
+                          aria-selected={selected}
+                          className={`reports__modal-dd-opt ${
+                            selected ? "reports__modal-dd-opt--selected" : ""
+                          }`}
+                          onClick={() => {
+                            setBeneficiary(m._id);
+                            setBeneficiaryOpen(false);
+                          }}
+                        >
+                          <span className="reports__modal-dd-avatar">
+                            {initials(m.name)}
+                          </span>
+                          <span className="reports__modal-dd-opt-name">{m.name}</span>
+                          {selected && (
+                            <FaCheck className="reports__modal-dd-opt-check" />
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
             </div>
 
             <div className="ng-field">
@@ -919,16 +1079,20 @@ const Expenses = () => {
         </div>
       )}
 
-      {/* ---------- Quick add FAB ---------- */}
-      <Fab
-        onClick={() => setQuickAddOpen(true)}
-        disabled={!group || members.length === 0}
-      />
-      <QuickAddExpense
-        open={quickAddOpen}
-        onClose={() => setQuickAddOpen(false)}
-        group={group}
-      />
+      {/* ---------- Quick add FAB (group scope only) ---------- */}
+      {scope === "group" && (
+        <>
+          <Fab
+            onClick={() => setQuickAddOpen(true)}
+            disabled={!group || members.length === 0}
+          />
+          <QuickAddExpense
+            open={quickAddOpen}
+            onClose={() => setQuickAddOpen(false)}
+            group={group}
+          />
+        </>
+      )}
     </div>
   );
 };

@@ -2,7 +2,7 @@
 // Mirrors NewGroup's topbar pattern + a responsive card grid.
 
 $brand-soft: rgba(110, 26, 110, 0.08);
-$danger: #ef4444;
+$danger: var(--accent-danger);
 
 .groupsPage {
   position: relative;
@@ -130,9 +130,16 @@ $danger: #ef4444;
     grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
     gap: 20px;
 
-    @media (max-width: 480px) {
+    @media (max-width: 640px) {
+      // Two compact cards per row on phones — single-column was making
+      // each card uncomfortably tall on small screens.
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    @media (max-width: 360px) {
       grid-template-columns: 1fr;
-      gap: 16px;
+      gap: 12px;
     }
   }
 

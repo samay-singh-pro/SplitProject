@@ -116,12 +116,49 @@ const validateExpensePayload = ({
   return { normalizedSplits, amt };
 };
 
+// ---------- Group authorization (Splitwise-style) ----------
+// A user relates to a group in one of three ways:
+//   "owner"  — they created the group (group.createdBy). Acts as the
+//              moderator: can add/edit/delete ANY expense or settlement.
+//   "member" — an accepted, linked member row. Can add expenses (for
+//              anyone), edit/delete only the ones THEY created, and
+//              record settlements that involve them.
+//   "none"   — no relationship; no read or write access.
+const getGroupRole = (group, user) => {
+  if (!user) return "none";
+  const uid = user._id?.toString?.();
+  if (group.createdBy?.toString?.() === uid) return "owner";
+  const linked = group.members?.some(
+    (m) =>
+      m.linkedUserId?.toString?.() === uid && m.inviteStatus === "accepted"
+  );
+  return linked ? "member" : "none";
+};
+
+// The requesting user's own member._id within the group (the accepted,
+// linked row), or null. Used to enforce "settlements must involve you".
+const findMyMemberId = (group, user) => {
+  const uid = user?._id?.toString?.();
+  const mine = group.members?.find(
+    (m) =>
+      m.linkedUserId?.toString?.() === uid && m.inviteStatus === "accepted"
+  );
+  return mine ? mine._id.toString() : null;
+};
+
 export const getAllExpense = async (req, res) => {
   try {
     const { groupId } = req.params;
 
     const group = await Group.findById(groupId).populate("members");
     if (!group) return res.status(404).json({ message: "Group not found" });
+
+    // Only group participants (owner or accepted members) can read.
+    if (getGroupRole(group, req.user) === "none") {
+      return res
+        .status(403)
+        .json({ message: "You're not a member of this group." });
+    }
 
     const memberNameMap = new Map(
       group.members.map((m) => [m._id.toString(), m.name])
@@ -178,11 +215,18 @@ export const getAllExpense = async (req, res) => {
         }
       }
 
-      const formattedSplitDetails = splitDetails.map((split, i) => ({
-        memberId: split.member,
-        memberName: getNameById(split.member),
-        amount: shareCents[i] / 100,
-      }));
+      const formattedSplitDetails = splitDetails.map((split, i) => {
+        const details = {
+          memberId: split.member,
+          memberName: getNameById(split.member),
+          amount: shareCents[i] / 100,
+        };
+        // Include percentage if the split type is percentage
+        if (splitType === "percentage" && split.percentage !== undefined) {
+          details.percentage = split.percentage;
+        }
+        return details;
+      });
 
       return {
         _id: expense._id,
@@ -194,6 +238,9 @@ export const getAllExpense = async (req, res) => {
         spenderName: getNameById(spenderId),
         splitType,
         splitDetails: formattedSplitDetails,
+        // Surfaced so the client can show edit/delete only to the
+        // expense's creator (or the group owner).
+        createdBy: expense.createdBy,
         createdAt,
       };
     });
@@ -216,6 +263,7 @@ export const logExpense = async (req, res) => {
       spenderId,
       splitDetails,
       splitType,
+      date,
     } = req.body;
 
     const group = await Group.findById(groupId);
@@ -223,10 +271,28 @@ export const logExpense = async (req, res) => {
       return res.status(404).json({ message: "Group not found" });
     }
 
-    if (group.createdBy.toString() !== req.user._id.toString()) {
+    const role = getGroupRole(group, req.user);
+    if (role === "none") {
       return res.status(403).json({
-        message: "You are not authorized to log expenses for this group",
+        message: "You're not a member of this group.",
       });
+    }
+    // A non-owner may only record settlements that involve them (as the
+    // payer or the beneficiary). Owners can record any settlement.
+    if (settlementExpense && role !== "owner") {
+      const myMemberId = findMyMemberId(group, req.user);
+      const involvesMe =
+        myMemberId &&
+        (spenderId?.toString?.() === myMemberId ||
+          (Array.isArray(splitDetails) &&
+            splitDetails.some(
+              (s) => s.member?.toString?.() === myMemberId
+            )));
+      if (!involvesMe) {
+        return res.status(403).json({
+          message: "You can only record settlements that involve you.",
+        });
+      }
     }
 
     const result = validateExpensePayload({
@@ -244,6 +310,11 @@ export const logExpense = async (req, res) => {
         .json({ message: "Validation failed", errors: result.errors });
     }
 
+    // Use the client-supplied date as the expense timestamp (lets users
+    // log past expenses); fall back to now if absent/invalid.
+    const when = date ? new Date(date) : new Date();
+    const createdAt = Number.isNaN(when.getTime()) ? new Date() : when;
+
     const expense = new Expense({
       settlementExpense: !!settlementExpense,
       groupId,
@@ -254,6 +325,7 @@ export const logExpense = async (req, res) => {
       splitDetails: result.normalizedSplits,
       splitType,
       createdBy: req.user._id,
+      createdAt,
     });
 
     await expense.save();
@@ -293,9 +365,12 @@ export const updateExpense = async (req, res) => {
       return res.status(404).json({ message: "Group not found" });
     }
 
-    if (group.createdBy.toString() !== req.user._id.toString()) {
+    // Owner can edit anything; a member can edit only what they created.
+    const isCreator =
+      expense.createdBy?.toString?.() === req.user._id.toString();
+    if (getGroupRole(group, req.user) !== "owner" && !isCreator) {
       return res.status(403).json({
-        message: "You are not authorized to edit expenses in this group",
+        message: "You can only edit expenses you added.",
       });
     }
 
@@ -354,9 +429,12 @@ export const deleteExpense = async (req, res) => {
       return res.status(404).json({ message: "Group not found" });
     }
 
-    if (group.createdBy.toString() !== req.user._id.toString()) {
+    // Owner can delete anything; a member can delete only what they created.
+    const isCreator =
+      expense.createdBy?.toString?.() === req.user._id.toString();
+    if (getGroupRole(group, req.user) !== "owner" && !isCreator) {
       return res.status(403).json({
-        message: "You are not authorized to delete expenses in this group",
+        message: "You can only delete expenses you added.",
       });
     }
 

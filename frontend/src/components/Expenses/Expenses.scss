@@ -1,7 +1,7 @@
 // ---------- Reports / Expenses page ----------
 
 $brand-soft: rgba(110, 26, 110, 0.08);
-$danger: #ef4444;
+$danger: var(--accent-danger);
 
 .reports {
   position: relative;
@@ -38,13 +38,16 @@ $danger: #ef4444;
     margin: 0 auto 20px;
 
     @media (max-width: 640px) {
-      margin-bottom: 14px;
+      margin-bottom: 12px;
 
       .reports__crumbs {
         display: none; // shrink topbar on phones
       }
       .reports__subtitle {
         display: none;
+      }
+      .reports__title {
+        font-size: 1.35rem;
       }
     }
   }
@@ -88,17 +91,33 @@ $danger: #ef4444;
   &__group-row {
     max-width: 1200px;
     margin: 0 auto 28px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 14px;
+
+    @media (max-width: 640px) {
+      margin-bottom: 16px;
+      gap: 10px;
+    }
   }
 
   // ---------- Placeholder / loading ----------
   &__placeholder {
-    max-width: 600px;
-    margin: 60px auto;
-    padding: 50px 28px;
+    // Full-width card (consistent with the Groups + Expense-list empty
+    // states) so it stays proportionate to the page on wide screens.
+    display: flex;
+    flex-direction: column;
+    align-items: center;
     text-align: center;
+    width: 100%;
+    max-width: 1200px;
+    margin: 24px auto 0;
+    padding: clamp(48px, 7vw, 72px) 24px;
     background: var(--bg-card);
     border: 1px solid var(--border-color);
     border-radius: 18px;
+    box-shadow: var(--shadow-sm);
 
     h3 {
       font-size: 1.15rem;
@@ -111,6 +130,7 @@ $danger: #ef4444;
       color: var(--text-secondary);
       font-size: 0.92rem;
       margin: 0;
+      max-width: 420px;
     }
   }
 
@@ -144,6 +164,14 @@ $danger: #ef4444;
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
     gap: 14px;
+
+    @media (max-width: 640px) {
+      // Two compact tiles per row on phones — full-width tiles waste
+      // vertical space when the user has 5 KPIs to scan.
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+      margin-bottom: 18px;
+    }
   }
 
   &__kpi {
@@ -155,6 +183,11 @@ $danger: #ef4444;
     border: 1px solid var(--border-color);
     border-radius: 14px;
     box-shadow: var(--shadow-sm);
+
+    @media (max-width: 640px) {
+      padding: 10px 12px;
+      gap: 10px;
+    }
   }
 
   &__kpi-icon {
@@ -166,6 +199,13 @@ $danger: #ef4444;
     justify-content: center;
     font-size: 1.1rem;
     flex-shrink: 0;
+
+    @media (max-width: 640px) {
+      width: 34px;
+      height: 34px;
+      font-size: 0.92rem;
+      border-radius: 10px;
+    }
 
     &--brand {
       background: $brand-soft;
@@ -184,14 +224,14 @@ $danger: #ef4444;
       color: #f59e0b;
     }
     &--red {
-      background: rgba(239, 68, 68, 0.12);
-      color: #ef4444;
+      background: var(--accent-danger-soft-strong);
+      color: var(--accent-danger);
     }
   }
 
   &__kpi-label {
     display: block;
-    font-size: 0.74rem;
+    font-size: 0.7rem;
     color: var(--text-tertiary);
     text-transform: uppercase;
     letter-spacing: 0.08em;
@@ -208,6 +248,10 @@ $danger: #ef4444;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+
+    @media (max-width: 640px) {
+      font-size: 1rem;
+    }
   }
 
   // ---------- Sections ----------
@@ -219,6 +263,12 @@ $danger: #ef4444;
     border-radius: 18px;
     padding: 22px;
     box-shadow: var(--shadow-sm);
+
+    @media (max-width: 640px) {
+      padding: 16px;
+      margin-bottom: 18px;
+      border-radius: 14px;
+    }
   }
 
   &__section-head {
@@ -249,6 +299,15 @@ $danger: #ef4444;
       color: var(--text-secondary);
       margin: 0;
     }
+
+    @media (max-width: 640px) {
+      gap: 10px;
+      margin-bottom: 14px;
+
+      h2 {
+        font-size: 1rem;
+      }
+    }
   }
 
   // ---------- Direct / Simplified toggle ----------
@@ -261,6 +320,14 @@ $danger: #ef4444;
     border: 1px solid var(--border-color);
     border-radius: 999px;
     margin-bottom: 14px;
+
+    @media (max-width: 640px) {
+      // Stretch the segmented control full-width so both tabs are
+      // comfortably tappable; keep it >=36px tall.
+      display: flex;
+      align-self: stretch;
+      width: 100%;
+    }
   }
 
   &__settle-tab {
@@ -277,6 +344,13 @@ $danger: #ef4444;
     font-weight: 600;
     cursor: pointer;
     transition: background 0.18s ease, color 0.18s ease;
+
+    @media (max-width: 640px) {
+      flex: 1;
+      justify-content: center;
+      min-height: 36px;
+      padding: 8px 10px;
+    }
 
     span {
       padding: 1px 7px;
@@ -325,6 +399,14 @@ $danger: #ef4444;
     svg {
       font-size: 0.78rem;
     }
+
+    @media (max-width: 640px) {
+      width: 100%;
+      justify-content: center;
+      min-height: 44px;
+      padding: 11px 16px;
+      font-size: 0.9rem;
+    }
   }
 
   &__settled {
@@ -349,6 +431,13 @@ $danger: #ef4444;
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
     gap: 14px;
+
+    @media (max-width: 640px) {
+      // Single column so a 320px-min card can't trigger horizontal
+      // overflow on narrow phones.
+      grid-template-columns: 1fr;
+      gap: 12px;
+    }
   }
 
   &__settle-group {
@@ -404,7 +493,7 @@ $danger: #ef4444;
     color: $danger;
     padding: 4px 10px;
     border-radius: 999px;
-    background: rgba(239, 68, 68, 0.1);
+    background: var(--accent-danger-soft);
     white-space: nowrap;
   }
 
@@ -1009,6 +1098,11 @@ $danger: #ef4444;
     &:hover {
       background: var(--brand-hover);
     }
+
+    @media (max-width: 640px) {
+      min-height: 40px;
+      padding: 9px 16px;
+    }
   }
 
   // ---------- Charts grid ----------
@@ -1022,6 +1116,10 @@ $danger: #ef4444;
     @media (max-width: 900px) {
       grid-template-columns: 1fr;
     }
+
+    @media (max-width: 640px) {
+      gap: 14px;
+    }
   }
 
   &__chart {
@@ -1033,6 +1131,11 @@ $danger: #ef4444;
 
     &--wide {
       grid-column: 1 / -1;
+    }
+
+    @media (max-width: 640px) {
+      padding: 14px;
+      border-radius: 14px;
     }
   }
 
@@ -1066,6 +1169,12 @@ $danger: #ef4444;
     justify-content: center;
     padding: 16px;
     animation: rp-fade 0.18s ease-out;
+
+    @media (max-width: 640px) {
+      // Bottom-sheet alignment: dock the panel to the bottom edge.
+      align-items: flex-end;
+      padding: 0;
+    }
   }
 
   &__modal {
@@ -1098,6 +1207,24 @@ $danger: #ef4444;
         box-shadow: 0 0 0 3px $brand-soft;
       }
     }
+
+    @media (max-width: 640px) {
+      // Near-full-screen bottom sheet instead of a cramped centered card.
+      width: 100%;
+      max-width: 100%;
+      max-height: 92vh;
+      margin: 0;
+      padding: 16px;
+      border-radius: 18px 18px 0 0;
+      overflow-y: auto;
+      animation: rp-slide 0.2s ease-out;
+
+      .ng-field select {
+        // 16px prevents iOS zoom-on-focus.
+        font-size: 16px;
+        padding: 9px 12px;
+      }
+    }
   }
 
   &__modal-head {
@@ -1110,6 +1237,17 @@ $danger: #ef4444;
       font-size: 1.05rem;
       font-weight: 600;
       color: var(--text-primary);
+    }
+
+    @media (max-width: 640px) {
+      // Keep the header pinned while the sheet body scrolls.
+      position: sticky;
+      top: -16px;
+      margin: -16px -16px 0;
+      padding: 16px;
+      background: var(--bg-card);
+      border-bottom: 1px solid var(--border-light);
+      z-index: 1;
     }
   }
 
@@ -1125,6 +1263,145 @@ $danger: #ef4444;
     justify-content: center;
     cursor: pointer;
     font-size: 0.8rem;
+
+    @media (max-width: 640px) {
+      // Comfortable tap target on touch screens.
+      width: 40px;
+      height: 40px;
+      font-size: 0.9rem;
+    }
+  }
+
+  // ---------- Themed dropdown for settlement modal ----------
+  &__modal-dd {
+    position: relative;
+  }
+
+  &__modal-dd-trigger {
+    width: 100%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 11px 14px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    color: var(--text-primary);
+    font-family: inherit;
+    font-size: 0.93rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+
+    @media (max-width: 640px) {
+      font-size: 16px;
+      padding: 9px 12px;
+      min-height: 44px;
+    }
+
+    &:hover {
+      border-color: var(--brand-primary);
+    }
+
+    &--open {
+      border-color: var(--brand-primary);
+      box-shadow: 0 0 0 3px rgba(110, 26, 110, 0.12);
+
+      .reports__modal-dd-chev {
+        transform: rotate(180deg);
+        color: var(--brand-primary);
+      }
+    }
+  }
+
+  &__modal-dd-label {
+    flex: 1;
+    text-align: left;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &__modal-dd-chev {
+    color: var(--text-tertiary);
+    font-size: 0.72rem;
+    transition: transform 0.2s ease;
+    flex-shrink: 0;
+  }
+
+  &__modal-dd-menu {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    right: 0;
+    z-index: 10;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    padding: 4px;
+    max-height: 260px;
+    overflow-y: auto;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+    animation: rp-dd 0.16s ease-out;
+  }
+
+  &__modal-dd-opt {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 12px;
+    background: transparent;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 0.88rem;
+    color: var(--text-primary);
+    text-align: left;
+    transition: background 0.12s ease;
+
+    &:hover {
+      background: var(--bg-secondary);
+    }
+
+    &-name {
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    &-check {
+      color: var(--brand-primary);
+      font-size: 0.78rem;
+      flex-shrink: 0;
+    }
+
+    &--selected {
+      background: rgba(110, 26, 110, 0.1);
+      color: var(--brand-primary);
+      font-weight: 600;
+
+      &:hover {
+        background: rgba(110, 26, 110, 0.14);
+      }
+    }
+  }
+
+  &__modal-dd-avatar {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: rgba(110, 26, 110, 0.12);
+    color: var(--brand-primary);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.68rem;
+    font-weight: 700;
+    flex-shrink: 0;
   }
 }
 
@@ -1144,6 +1421,17 @@ $danger: #ef4444;
 }
 
 @keyframes rp-slide {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes rp-dd {
   from {
     opacity: 0;
     transform: translateY(-4px);

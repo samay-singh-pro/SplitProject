@@ -26,7 +26,15 @@ const SkeletonCard = () => (
 const Groups = ({ onNavigate }) => {
   const dispatch = useDispatch();
   const { groups, loading, error } = useSelector((state) => state.group);
-  const [insightsGroup, setInsightsGroup] = useState(null);
+  // Track only the OPEN group's id and re-derive the live group from the
+  // store on every render. Storing the group object itself froze a
+  // snapshot, so member adds/removes (which update the store) never
+  // showed up in the open Insights/Edit modal.
+  const [insightsGroupId, setInsightsGroupId] = useState(null);
+  const insightsGroup =
+    insightsGroupId != null
+      ? groups.find((g) => g._id === insightsGroupId) || null
+      : null;
 
   useEffect(() => {
     dispatch(fetchGroups());
@@ -100,7 +108,7 @@ const Groups = ({ onNavigate }) => {
               <GroupCard
                 key={group._id}
                 group={group}
-                onOpen={setInsightsGroup}
+                onOpen={(g) => setInsightsGroupId(g._id)}
               />
             ))}
           </div>
@@ -130,7 +138,7 @@ const Groups = ({ onNavigate }) => {
       <GroupInsights
         group={insightsGroup}
         open={!!insightsGroup}
-        onClose={() => setInsightsGroup(null)}
+        onClose={() => setInsightsGroupId(null)}
         onNavigate={onNavigate}
       />
     </div>

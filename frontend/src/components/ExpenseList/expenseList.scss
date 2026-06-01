@@ -12,6 +12,10 @@ $brand-soft: rgba(110, 26, 110, 0.08);
   background: var(--bg-primary);
   isolation: isolate;
 
+  @media (max-width: 640px) {
+    padding: 12px 10px 24px;
+  }
+
   &__bg {
     position: absolute;
     inset: 0;
@@ -37,13 +41,16 @@ $brand-soft: rgba(110, 26, 110, 0.08);
     margin: 0 auto 20px;
 
     @media (max-width: 640px) {
-      margin-bottom: 14px;
+      margin-bottom: 12px;
 
       .expList__crumbs {
         display: none;
       }
       .expList__subtitle {
         display: none;
+      }
+      .expList__title {
+        font-size: 1.35rem;
       }
     }
   }
@@ -86,6 +93,15 @@ $brand-soft: rgba(110, 26, 110, 0.08);
   &__group-row {
     max-width: 1200px;
     margin: 0 auto 24px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 14px;
+
+    @media (max-width: 640px) {
+      margin-bottom: 16px;
+      gap: 10px;
+    }
   }
 
   // ---------- Filters bar ----------
@@ -96,9 +112,26 @@ $brand-soft: rgba(110, 26, 110, 0.08);
     gap: 12px;
     align-items: center;
 
-    @media (max-width: 560px) {
-      flex-direction: column;
-      align-items: stretch;
+    // Phone: search across the top, then category + sort side-by-side
+    // below so they don't each take a full row.
+    @media (max-width: 640px) {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      grid-template-areas:
+        "search search"
+        "cat sort";
+      gap: 6px;
+      margin-bottom: 10px;
+
+      .expList__search {
+        grid-area: search;
+      }
+      .expList__cat-dd {
+        grid-area: cat;
+      }
+      .expList__sort {
+        grid-area: sort;
+      }
     }
   }
 
@@ -112,6 +145,11 @@ $brand-soft: rgba(110, 26, 110, 0.08);
     border: 1px solid var(--border-color);
     border-radius: 12px;
     transition: border-color 0.2s ease, box-shadow 0.2s ease;
+
+    @media (max-width: 640px) {
+      border-radius: 10px;
+      padding: 0 6px 0 10px;
+    }
 
     &:focus-within {
       border-color: var(--brand-primary);
@@ -140,6 +178,18 @@ $brand-soft: rgba(110, 26, 110, 0.08);
       &::placeholder {
         color: var(--text-tertiary);
       }
+
+      // 16px prevents iOS auto-zoom when focusing the field.
+      @media (max-width: 640px) {
+        font-size: 16px;
+        padding: 8px 0;
+      }
+
+      &::placeholder {
+        @media (max-width: 640px) {
+          font-size: 14px;
+        }
+      }
     }
 
     button {
@@ -154,16 +204,17 @@ $brand-soft: rgba(110, 26, 110, 0.08);
       justify-content: center;
       cursor: pointer;
       font-size: 0.7rem;
+
+      @media (max-width: 640px) {
+        width: 32px;
+        height: 32px;
+      }
     }
   }
 
   &__cat-dd {
     position: relative;
     flex-shrink: 0;
-
-    @media (max-width: 560px) {
-      width: 100%;
-    }
   }
 
   &__cat-trigger {
@@ -182,6 +233,12 @@ $brand-soft: rgba(110, 26, 110, 0.08);
     transition: border-color 0.2s ease, box-shadow 0.2s ease;
     min-width: 200px;
     width: 100%;
+
+    @media (max-width: 640px) {
+      min-width: 0;
+      padding: 9px 12px;
+      font-size: 0.85rem;
+    }
 
     > svg:first-child {
       color: var(--brand-primary);
@@ -391,17 +448,37 @@ $brand-soft: rgba(110, 26, 110, 0.08);
       align-items: baseline;
       gap: 8px;
     }
+
+    @media (max-width: 640px) {
+      padding: 8px 10px;
+      gap: 8px;
+      margin-bottom: 10px;
+      border-radius: 10px;
+
+      > div {
+        gap: 4px;
+        min-width: 0;
+      }
+    }
   }
 
   &__summary-label {
     font-size: 0.78rem;
     color: var(--text-tertiary);
+
+    @media (max-width: 640px) {
+      font-size: 0.7rem;
+    }
   }
 
   &__summary-bar strong {
     font-size: 0.95rem;
     color: var(--text-primary);
     font-weight: 600;
+
+    @media (max-width: 640px) {
+      font-size: 0.85rem;
+    }
   }
 
   &__summary-amount {
@@ -415,18 +492,31 @@ $brand-soft: rgba(110, 26, 110, 0.08);
     display: flex;
     flex-direction: column;
     gap: 10px;
+
+    @media (max-width: 640px) {
+      gap: 6px;
+    }
   }
 
   // ---------- Placeholder / empty ----------
   &__placeholder,
   &__empty {
-    max-width: 600px;
-    margin: 60px auto;
-    padding: 50px 28px;
+    // Full-width card (matches the "No groups yet" state on the Groups
+    // page) so it stays proportionate to the page on wide screens
+    // instead of looking like a small island. Inner text is capped for
+    // readable line length, but the card itself fills the column.
+    display: flex;
+    flex-direction: column;
+    align-items: center;
     text-align: center;
+    width: 100%;
+    max-width: 1200px;
+    margin: 24px auto 0;
+    padding: clamp(48px, 7vw, 72px) 24px;
     background: var(--bg-card);
     border: 1px solid var(--border-color);
     border-radius: 18px;
+    box-shadow: var(--shadow-sm);
 
     h3 {
       font-size: 1.15rem;
@@ -439,6 +529,12 @@ $brand-soft: rgba(110, 26, 110, 0.08);
       color: var(--text-secondary);
       font-size: 0.92rem;
       margin: 0;
+      max-width: 420px;
+    }
+
+    @media (max-width: 640px) {
+      padding: 40px 18px;
+      border-radius: 16px;
     }
   }
 
@@ -513,6 +609,13 @@ $brand-soft: rgba(110, 26, 110, 0.08);
   backdrop-filter: blur(2px);
   animation: el-fade 0.18s ease-out;
 
+  // Phone: dock the dialog to the bottom as a sheet instead of a
+  // cramped centered card.
+  @media (max-width: 640px) {
+    align-items: flex-end;
+    padding: 0;
+  }
+
   &-panel {
     width: min(420px, 100%);
     background: var(--bg-card);
@@ -540,6 +643,16 @@ $brand-soft: rgba(110, 26, 110, 0.08);
         color: var(--text-primary);
       }
     }
+
+    @media (max-width: 640px) {
+      width: 100%;
+      max-width: 100%;
+      max-height: 92vh;
+      margin: 0;
+      padding: 16px;
+      border-radius: 18px 18px 0 0;
+      overflow-y: auto;
+    }
   }
 
   &-icon {
@@ -547,8 +660,8 @@ $brand-soft: rgba(110, 26, 110, 0.08);
     height: 52px;
     margin: 0 auto;
     border-radius: 50%;
-    background: rgba(239, 68, 68, 0.12);
-    color: #ef4444;
+    background: var(--accent-danger-soft-strong);
+    color: var(--accent-danger);
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -559,6 +672,18 @@ $brand-soft: rgba(110, 26, 110, 0.08);
     display: flex;
     gap: 8px;
     justify-content: center;
+
+    @media (max-width: 640px) {
+      gap: 10px;
+
+      // Stretch both buttons (Cancel ghost + Delete) to share the
+      // full sheet width with comfortable tap targets.
+      > button {
+        flex: 1;
+        justify-content: center;
+        min-height: 44px;
+      }
+    }
   }
 
   &-delete {
@@ -566,7 +691,7 @@ $brand-soft: rgba(110, 26, 110, 0.08);
     align-items: center;
     gap: 6px;
     padding: 10px 18px;
-    background: #ef4444;
+    background: var(--accent-danger);
     color: white;
     border: none;
     border-radius: 10px;
@@ -587,6 +712,12 @@ $brand-soft: rgba(110, 26, 110, 0.08);
     &:disabled {
       opacity: 0.6;
       cursor: not-allowed;
+    }
+
+    @media (max-width: 640px) {
+      padding: 11px 16px;
+      font-size: 0.9rem;
+      min-height: 44px;
     }
   }
 }

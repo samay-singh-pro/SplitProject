@@ -8,8 +8,13 @@ import { getAllExpenses, deleteExpense } from "../../store/expenseSlice";
 import { fetchGroupStats } from "../../store/statsSlice";
 import GroupSelector from "../shared/GroupSelector/GroupSelector";
 import { useCurrentGroup } from "../../hooks/useCurrentGroup";
+import { useScope } from "../../hooks/useScope";
+import ScopeToggle from "../shared/ScopeToggle/ScopeToggle";
+import PersonalList from "../Personal/PersonalList";
+import { getPersonal } from "../../store/personalSlice";
 import Fab from "../shared/Fab/Fab";
 import QuickAddExpense from "../QuickAddExpense/QuickAddExpense";
+import { getCurrencySymbol } from "../../utils/currency";
 import {
   FaArrowRight,
   FaSearch,
@@ -45,8 +50,10 @@ const ExpenseListPage = () => {
   const dispatch = useDispatch();
   const { groups } = useSelector((state) => state.group);
   const { expenses, loading } = useSelector((state) => state.expense);
+  const { userInfo } = useSelector((state) => state.login);
 
   const [selectedGroup, setSelectedGroup] = useCurrentGroup();
+  const [scope, setScope] = useScope();
   const [search, setSearch] = useState("");
   const [activeCategory, setActiveCategory] = useState("All");
   const [sort, setSort] = useState("newest");
@@ -76,15 +83,38 @@ const ExpenseListPage = () => {
     dispatch(fetchGroups());
   }, [dispatch]);
 
+  // Pull the personal feed whenever the user switches to Personal scope.
   useEffect(() => {
-    if (selectedGroup) dispatch(getAllExpenses(selectedGroup));
-  }, [selectedGroup, dispatch]);
+    if (scope === "personal") dispatch(getPersonal());
+  }, [scope, dispatch]);
+
+  // Only fetch once the selected group is confirmed to be one of the
+  // current user's groups. A stale id can persist in localStorage from a
+  // previous session/account; fetching it would 403/404 and show a
+  // "failed to load" toast to a user who did nothing wrong.
+  useEffect(() => {
+    if (selectedGroup && groups.some((g) => g._id === selectedGroup)) {
+      dispatch(getAllExpenses(selectedGroup));
+    }
+  }, [selectedGroup, groups, dispatch]);
 
   const handleGroupChange = (id) => {
     setSelectedGroup(id);
   };
 
   const currentGroup = groups.find((g) => g._id === selectedGroup);
+  // Amounts render in the group's currency (set at creation), shared by
+  // all members — not the viewer's personal preference.
+  const symbol = getCurrencySymbol(currentGroup?.currency);
+
+  // Splitwise-style permissions: the group owner can edit/delete any
+  // expense (moderator); everyone else can only touch the ones they
+  // created. `createdBy` comes back on each expense from the API.
+  const myId = userInfo?._id?.toString();
+  const isOwner =
+    currentGroup && String(currentGroup.createdBy) === String(myId);
+  const canModify = (expense) =>
+    isOwner || String(expense?.createdBy) === String(myId);
 
   const handleConfirmDelete = () => {
     if (!confirmDelete) return;
@@ -131,7 +161,10 @@ const ExpenseListPage = () => {
     [filtered]
   );
 
-  const hasGroup = Boolean(selectedGroup);
+  // Treat the page as "has a group" only when the selection resolves to
+  // one of the user's groups — a stale/foreign id shows the placeholder
+  // rather than an empty list for a group that isn't theirs.
+  const hasGroup = Boolean(currentGroup);
   const hasExpenses = expenses && expenses.length > 0;
 
   return (
@@ -146,21 +179,32 @@ const ExpenseListPage = () => {
           <FaArrowRight />
           <span className="active">Expense list</span>
         </div>
-        <h1 className="expList__title">All expenses</h1>
+        <h1 className="expList__title">
+          {scope === "personal" ? "My expenses" : "All expenses"}
+        </h1>
         <p className="expList__subtitle">
-          Browse, filter, and inspect every expense in the group.
+          {scope === "personal"
+            ? "Everything you've spent — your solo logs and what you paid in groups."
+            : "Browse, filter, and inspect every expense in the group."}
         </p>
       </header>
 
       <div className="expList__group-row">
-        <GroupSelector
-          groups={groups}
-          selectedId={selectedGroup}
-          onSelect={handleGroupChange}
-        />
+        <ScopeToggle scope={scope} onChange={setScope} />
+        {scope === "group" && (
+          <GroupSelector
+            groups={groups}
+            selectedId={selectedGroup}
+            onSelect={handleGroupChange}
+          />
+        )}
       </div>
 
-      {!hasGroup ? (
+      {scope === "personal" ? (
+        <div className="expList__items">
+          <PersonalList />
+        </div>
+      ) : !hasGroup ? (
         <div className="expList__placeholder">
           <div className="expList__placeholder-icon">
             <FaListUl />
@@ -280,7 +324,7 @@ const ExpenseListPage = () => {
                   Total in view
                 </span>
                 <strong className="expList__summary-amount">
-                  ₹{formatMoney(total)}
+                  {symbol}{formatMoney(total)}
                 </strong>
               </div>
             </div>
@@ -315,8 +359,11 @@ const ExpenseListPage = () => {
                 <ExpenseCard
                   key={expense._id || i}
                   expense={expense}
-                  onEdit={(e) => setEditing(e)}
-                  onDelete={(e) => setConfirmDelete(e)}
+                  symbol={symbol}
+                  onEdit={canModify(expense) ? (e) => setEditing(e) : undefined}
+                  onDelete={
+                    canModify(expense) ? (e) => setConfirmDelete(e) : undefined
+                  }
                 />
               ))
             )}
@@ -324,15 +371,19 @@ const ExpenseListPage = () => {
         </>
       )}
 
-      <Fab
-        onClick={() => setQuickAddOpen(true)}
-        disabled={!currentGroup || currentGroup.members?.length === 0}
-      />
-      <QuickAddExpense
-        open={quickAddOpen}
-        onClose={() => setQuickAddOpen(false)}
-        group={currentGroup}
-      />
+      {scope === "group" && (
+        <>
+          <Fab
+            onClick={() => setQuickAddOpen(true)}
+            disabled={!currentGroup || currentGroup.members?.length === 0}
+          />
+          <QuickAddExpense
+            open={quickAddOpen}
+            onClose={() => setQuickAddOpen(false)}
+            group={currentGroup}
+          />
+        </>
+      )}
 
       <EditExpenseModal
         open={!!editing}
@@ -356,7 +407,7 @@ const ExpenseListPage = () => {
             </div>
             <h3>Delete this expense?</h3>
             <p>
-              <strong>{confirmDelete.description || "Untitled"}</strong> for ₹
+              <strong>{confirmDelete.description || "Untitled"}</strong> for {symbol}
               {Number(confirmDelete.amount || 0).toFixed(2)} will be removed
               and balances will be recomputed. This can&apos;t be undone.
             </p>

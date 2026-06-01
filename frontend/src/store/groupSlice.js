@@ -66,11 +66,31 @@ export const deleteGroup = createAsyncThunk(
 
 export const addGroupMember = createAsyncThunk(
   "group/addGroupMember",
-  async ({ groupId, name }, { rejectWithValue }) => {
+  async ({ groupId, name, email }, { rejectWithValue }) => {
     try {
       const response = await axios.post(
         `${BASE_URL}/group/${groupId}/members`,
-        { name },
+        { name, email: email || undefined },
+        { headers: authHeader() }
+      );
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error.response?.data || { message: error.message }
+      );
+    }
+  }
+);
+
+// Add the current user to a group as an accepted member, so expenses
+// they pay there flow into their Personal view.
+export const includeMe = createAsyncThunk(
+  "group/includeMe",
+  async (groupId, { rejectWithValue }) => {
+    try {
+      const response = await axios.post(
+        `${BASE_URL}/group/${groupId}/include-me`,
+        {},
         { headers: authHeader() }
       );
       return response.data;
@@ -138,7 +158,7 @@ const groupSlice = createSlice({
         state.error = null;
         state.success = false;
       })
-      .addCase(createGroup.fulfilled, (state, action) => {
+      .addCase(createGroup.fulfilled, (state) => {
         state.loading = false;
         state.success = true;
       })
@@ -176,6 +196,9 @@ const groupSlice = createSlice({
         replaceGroup(state, action.payload);
       })
       .addCase(addGroupMember.fulfilled, (state, action) => {
+        replaceGroup(state, action.payload);
+      })
+      .addCase(includeMe.fulfilled, (state, action) => {
         replaceGroup(state, action.payload);
       })
       .addCase(removeGroupMember.fulfilled, (state, action) => {

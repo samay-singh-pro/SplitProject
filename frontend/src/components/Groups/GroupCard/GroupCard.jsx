@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import "./GroupCard.scss";
 import { FaUsers, FaImage, FaArrowRight } from "react-icons/fa";
 import { CATEGORY_EMOJI } from "../../../utils/categoryInfer";
@@ -17,6 +18,16 @@ const GroupCard = ({ group, onOpen }) => {
   const members = group.members || [];
   const emoji = CATEGORY_EMOJI[group.category] || "✨";
 
+  // Track image-load failure so a broken URL falls back to the icon
+  // tile instead of showing the browser's broken-image glyph. Reset
+  // when the source URL changes.
+  const [imageBroken, setImageBroken] = useState(false);
+  useEffect(() => {
+    setImageBroken(false);
+  }, [group.image]);
+
+  const showImage = Boolean(group.image) && !imageBroken;
+
   return (
     <button
       type="button"
@@ -25,8 +36,12 @@ const GroupCard = ({ group, onOpen }) => {
       aria-label={`Open insights for ${group.name}`}
     >
       <div className="groupCard__cover">
-        {group.image ? (
-          <img src={group.image} alt="" />
+        {showImage ? (
+          <img
+            src={group.image}
+            alt=""
+            onError={() => setImageBroken(true)}
+          />
         ) : (
           <div className="groupCard__cover-fallback">
             <FaImage />

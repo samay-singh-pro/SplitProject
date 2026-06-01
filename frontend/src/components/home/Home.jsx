@@ -1,222 +1,574 @@
-import React from "react";
-import hero from "../../assets/hero.png";
-import info from "../../assets/info.png";
-import logo from "../../assets/logo.png";
-import split from "../../assets/split.png";
-import transaction from "../../assets/transaction.png";
-import banner from "../../assets/splitit.png";
-import friendly from "../../assets/friendlly.png";
-import "./Home.scss";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { useSelector } from "react-redux";
+import "./Home.scss";
+import {
+  FaUsers,
+  FaBolt,
+  FaShieldAlt,
+  FaArrowRight,
+  FaCheckCircle,
+  FaArrowRight as FaArrow,
+  FaUtensils,
+  FaPlane,
+  FaShoppingBag,
+  FaChartPie,
+  FaMagic,
+} from "react-icons/fa";
+
+// Reactively detect viewport — desktop renders the rich landing,
+// phone/tablet renders the swipeable onboarding slider.
+const useIsMobile = (query = "(max-width: 768px)") => {
+  const [match, setMatch] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return window.matchMedia(query).matches;
+  });
+
+  useEffect(() => {
+    const mql = window.matchMedia(query);
+    const handler = (e) => setMatch(e.matches);
+    mql.addEventListener("change", handler);
+    return () => mql.removeEventListener("change", handler);
+  }, [query]);
+
+  return match;
+};
+
+// Each feature card has a unique animated mini-visualization above the
+// copy, so the page feels alive instead of three identical icon tiles.
+
+// ----- Mobile onboarding slider -----
+// Swipeable horizontal carousel with scroll-snap. IntersectionObserver
+// keeps the dot indicator + bottom CTA in sync with the active slide.
+const ONBOARD_SLIDES = [
+  {
+    kind: "welcome",
+    title: "Welcome to splitit",
+    body: "Track shared spends with no drama. Built for trips, roommates, and that one friend who always picks up the bill.",
+  },
+  {
+    kind: "split",
+    title: "Split with anyone",
+    body: "Add a group, drop in names. No accounts required for the people you split with.",
+  },
+  {
+    kind: "simplify",
+    title: "Settle in fewest steps",
+    body: "We compute who owes whom and simplify the chain to the minimum number of payments.",
+  },
+  {
+    kind: "math",
+    title: "Money math you can trust",
+    body: "Cent-precise arithmetic. Every paisa is accounted for, even with uneven splits and percentages.",
+  },
+  {
+    kind: "cta",
+    title: "Ready when you are",
+    body: "It takes 30 seconds to create a group and add your first expense.",
+  },
+];
+
+const SlideVisual = ({ kind }) => {
+  switch (kind) {
+    case "welcome":
+      return (
+        <div className="onboard__viz onboard__viz--welcome">
+          <div className="brandMark-orbit brandMark-orbit--dark">
+            <span className="brandMark brandMark--xl">splitit</span>
+          </div>
+        </div>
+      );
+    case "split":
+      return (
+        <div className="landing__viz landing__viz--avatars onboard__viz onboard__viz--card">
+          <span className="landing__viz-av landing__viz-av--1">SA</span>
+          <span className="landing__viz-av landing__viz-av--2">AL</span>
+          <span className="landing__viz-av landing__viz-av--3">JO</span>
+          <span className="landing__viz-av landing__viz-av--4">RI</span>
+          <span className="landing__viz-av landing__viz-av--plus">+</span>
+        </div>
+      );
+    case "simplify":
+      return (
+        <div className="landing__viz landing__viz--simplify onboard__viz onboard__viz--card">
+          <div className="landing__viz-stack landing__viz-stack--many">
+            <span /><span /><span /><span /><span />
+          </div>
+          <FaArrowRight className="landing__viz-arrow" />
+          <div className="landing__viz-stack landing__viz-stack--few">
+            <span /><span /><span />
+          </div>
+        </div>
+      );
+    case "math":
+      return (
+        <div className="landing__viz landing__viz--math onboard__viz onboard__viz--card">
+          <code className="landing__viz-line landing__viz-line--1">
+            ₹1,000.00 ÷ 3
+          </code>
+          <code className="landing__viz-line landing__viz-line--2">
+            = ₹333.34 + ₹333.33 + ₹333.33
+          </code>
+          <code className="landing__viz-line landing__viz-line--3">
+            ✓ exactly ₹1,000.00
+          </code>
+        </div>
+      );
+    case "cta":
+      return (
+        <div className="onboard__viz onboard__viz--cta">
+          <div className="onboard__viz-check">
+            <FaCheckCircle />
+          </div>
+        </div>
+      );
+    default:
+      return null;
+  }
+};
+
+const MobileOnboard = () => {
+  const trackRef = useRef(null);
+  const slidesRef = useRef([]);
+  const [active, setActive] = useState(0);
+
+  // Track which slide is centered using IntersectionObserver.
+  useEffect(() => {
+    const root = trackRef.current;
+    if (!root) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            const idx = slidesRef.current.indexOf(entry.target);
+            if (idx !== -1) setActive(idx);
+          }
+        });
+      },
+      { root, threshold: 0.6 }
+    );
+    slidesRef.current.forEach((el) => el && observer.observe(el));
+    return () => observer.disconnect();
+  }, []);
+
+  const goTo = (i) => {
+    const el = slidesRef.current[i];
+    if (!el) return;
+    el.scrollIntoView({
+      behavior: "smooth",
+      block: "nearest",
+      inline: "start",
+    });
+  };
+
+  const isLast = active === ONBOARD_SLIDES.length - 1;
+
+  return (
+    <main className="onboard">
+      <header className="onboard__top">
+        <span className="brandMark onboard__top-brand">splitit</span>
+        {!isLast && (
+          <button
+            type="button"
+            className="onboard__skip"
+            onClick={() => goTo(ONBOARD_SLIDES.length - 1)}
+          >
+            Skip
+          </button>
+        )}
+      </header>
+
+      <div className="onboard__track" ref={trackRef}>
+        {ONBOARD_SLIDES.map((s, i) => (
+          <section
+            key={s.kind}
+            ref={(el) => (slidesRef.current[i] = el)}
+            className="onboard__slide"
+            aria-hidden={i !== active}
+          >
+            <SlideVisual kind={s.kind} />
+            <h2 className="onboard__title">{s.title}</h2>
+            <p className="onboard__body">{s.body}</p>
+          </section>
+        ))}
+      </div>
+
+      <footer className="onboard__bottom">
+        <div className="onboard__dots" role="tablist">
+          {ONBOARD_SLIDES.map((_, i) => (
+            <button
+              key={i}
+              type="button"
+              role="tab"
+              aria-label={`Go to slide ${i + 1}`}
+              aria-selected={i === active}
+              className={`onboard__dot ${
+                i === active ? "onboard__dot--active" : ""
+              }`}
+              onClick={() => goTo(i)}
+            />
+          ))}
+        </div>
+
+        {isLast ? (
+          <div className="onboard__cta-row">
+            <Link to="/signup" className="onboard__cta onboard__cta--primary">
+              Get started — free <FaArrowRight />
+            </Link>
+            <Link to="/login" className="onboard__cta onboard__cta--ghost">
+              I already have an account
+            </Link>
+          </div>
+        ) : (
+          <button
+            type="button"
+            className="onboard__cta onboard__cta--primary"
+            onClick={() => goTo(active + 1)}
+          >
+            Next <FaArrowRight />
+          </button>
+        )}
+      </footer>
+    </main>
+  );
+};
 
 const Home = () => {
-  const { userInfo, isAuthenticated } = useSelector((state) => state.login);
-  console.log(userInfo);
+  const { isAuthenticated } = useSelector((state) => state.login);
+  const isMobile = useIsMobile();
+
+  // Mobile gets a native-app-style onboarding slider. Logged-in mobile
+  // users still get redirected by the router before they see this.
+  if (isMobile && !isAuthenticated) {
+    return <MobileOnboard />;
+  }
+
   return (
-    <>
-      {isAuthenticated ? (
-        <div className="welcome-card">
-          <div className="welcome-card__content">
-            <h1>Welcome, {userInfo?.username}!</h1>
-            <p>We're happy to have you here. Explore your dashboard now.</p>
-            <button className="button">
-              <Link to="/dashboard">Go to Dashboard</Link>
-            </button>
-          </div>
-        </div>
-      ) : (
-        ""
-      )}
-      <div className="hero">
-        <div className="hero__details">
-          <img src={logo} alt="" />
-          <h1>
-            <span>D</span>IVIDE WITH EASE
+    <main className="landing">
+      <div className="landing__bg" aria-hidden>
+        <div className="landing__grid" />
+        <div className="landing__glow" />
+      </div>
+
+      {/* Hero */}
+      <section className="landing__hero">
+        <div className="landing__hero-copy">
+          <span className="landing__eyebrow">
+            Shared expenses, without the drama
+          </span>
+          <h1 className="landing__title">
+            Split bills <span className="landing__title-accent">fairly</span>,
+            settle them <span className="landing__title-accent">faster</span>.
           </h1>
-          <h2>SHARE WITH JOY</h2>
-          <div className="hero__details__logos">
-            <svg
-              className="aero fill-current w-9 lg:w-12"
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 36 35"
-            >
-              <path d="M7.844 0L1.961 3.5l11.766 7 3.922 2.333L9.805 17.5 3.922 14 0 16.333l3.922 2.334 1.961 1.166L3.922 21l1.961 1.167V24.5l1.961-1.167v7L11.766 28v-7l7.844-4.667V35l3.922-2.333 1.96-1.167v-7l1.962-1.167V21l-1.961 1.167v-2.334l1.96-1.166v-2.334l-1.96 1.167v-4.667l5.883-3.5L35.298 7V4.667L33.337 3.5l-9.805 5.833L19.61 7l1.961-1.167-1.961-1.166-1.961 1.166-1.961-1.166 1.96-1.167-1.96-1.167L13.727 3.5z"></path>
-            </svg>
-            <svg
-              className="home fill-current w-9 lg:w-12"
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 34 32"
-            >
-              <path d="M27.736 15.229V31.02H20.56V22.6h-7.177v8.423H6.207V15.228l7.176-4.211 3.588-2.106 10.765 6.317zm-.03-6.335l5.412 3.176v2.106H29.53l-12.559-7.37-12.558 7.37H.824V12.07l16.147-9.475 7.177 4.211V.49h3.557v8.405z"></path>
-            </svg>
-            <svg
-              className="heart fill-current w-9 lg:w-12"
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 31 29"
-            >
-              <path d="M15.163 4.311L7.653-.043.143 4.311v15.237l15.02 8.707 15.02-8.707V4.311l-7.51-4.354z"></path>
-            </svg>
-            <svg
-              className="star fill-current w-9 lg:w-12"
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 29 30"
-            >
-              <path d="M11.673.979v9.055L3.519 5.506.461 10.6l8.154 4.528-8.154 4.527L3.52 24.75l8.154-4.528v9.056h6.115V20.22l8.154 4.528L29 19.655l-8.154-4.527L29 10.6l-3.058-5.094-8.154 4.528V.979z"></path>
-            </svg>
-          </div>
-          <div className="hero__details__buttons">
-            {!isAuthenticated ? (
-              <>
-                <button className="primary">
-                  <Link to="/login">Sign in</Link>
-                </button>
-                <button className="secondary">
-                  <Link to="/signup">Signup</Link>
-                </button>
-              </>
+          <p className="landing__lede">
+            Track group spend, see who owes what at a glance, and pay each
+            other back in the fewest possible transfers. Built for trips,
+            roommates, and that one friend who always picks up the bill.
+          </p>
+
+          <div className="landing__cta-row">
+            {isAuthenticated ? (
+              <Link
+                to="/dashboard"
+                className="landing__cta landing__cta--primary"
+              >
+                Go to dashboard <FaArrowRight />
+              </Link>
             ) : (
-              <button>
-                <Link className="secondary" to="/dashboard">
-                  Go to Dashboard
+              <>
+                <Link
+                  to="/signup"
+                  className="landing__cta landing__cta--primary"
+                >
+                  Get started — free <FaArrowRight />
                 </Link>
-              </button>
+                <Link to="/login" className="landing__cta landing__cta--ghost">
+                  I already have an account
+                </Link>
+              </>
             )}
           </div>
+
+          <ul className="landing__trust">
+            <li>
+              <FaCheckCircle /> Free forever
+            </li>
+            <li>
+              <FaCheckCircle /> No card required
+            </li>
+            <li>
+              <FaCheckCircle /> Cent-precise math
+            </li>
+          </ul>
         </div>
-        <div className="hero__image">
-          <img src={hero} alt="" />
-        </div>
-      </div>
-      <div className="cards">
-        <p className="title stylish-border">Our Offerings</p>
-        <p className="title_primary">Get more flexibility with&nbsp;Splitit</p>
-        <div className="cards__items">
-          <div className="item">
-            <div className="logo">
-              <img src={split} alt="" />
+
+        {/* Stylized app preview — a teaser of the settlements UI */}
+        <div className="landing__preview" aria-hidden>
+          <div className="landing__preview-card">
+            <div className="landing__preview-head">
+              <div>
+                <span className="landing__preview-label">Goa weekend</span>
+                <strong>Pending settlements</strong>
+              </div>
+              <span className="landing__preview-chip">3 to clear</span>
             </div>
-            <div className="item_details">
-              <h3>Easy Expense Splitting</h3>
-              <p>
-                Effortlessly split bills and expenses with friends and family.
-                Simply enter the total amount and let our app handle the
-                calculations. Ensure everyone pays their fair share without any
-                hassle.
-              </p>
+            <ul className="landing__preview-list">
+              <li>
+                <span className="landing__preview-av landing__preview-av--v">
+                  AL
+                </span>
+                <span className="landing__preview-flow">
+                  <em>Alex</em>
+                  <FaArrow />
+                  <em>Jordan</em>
+                </span>
+                <strong>₹825</strong>
+              </li>
+              <li>
+                <span className="landing__preview-av landing__preview-av--k">
+                  SA
+                </span>
+                <span className="landing__preview-flow">
+                  <em>Sam</em>
+                  <FaArrow />
+                  <em>Jordan</em>
+                </span>
+                <strong>₹200</strong>
+              </li>
+              <li>
+                <span className="landing__preview-av landing__preview-av--k">
+                  SA
+                </span>
+                <span className="landing__preview-flow">
+                  <em>Sam</em>
+                  <FaArrow />
+                  <em>Riley</em>
+                </span>
+                <strong>₹175</strong>
+              </li>
+            </ul>
+            <div className="landing__preview-foot">
+              <span>Simplified from 5 payments</span>
+              <strong>Total ₹1,200</strong>
             </div>
-            <button className="primary">Read more</button>
-          </div>
-          <div className="item">
-            <div className="logo">
-              <img src={info} alt="" />
-            </div>
-            <div className="item_details">
-              <h3>Instant Notifications</h3>
-              <p>
-                Stay informed with real-time notifications for all your
-                transactions. Receive instant alerts whenever someone pays their
-                share or when there are updates to your expense splits
-              </p>
-            </div>
-            <button className="primary">Read more</button>
           </div>
 
-          <div className="item">
-            <div className="logo">
-              <img src={transaction} alt="" />
+          {/* Floating accent card */}
+          <div className="landing__preview-mini">
+            <span className="landing__preview-mini-dot" />
+            <div>
+              <small>Net for Riley</small>
+              <strong>+ ₹175</strong>
             </div>
-            <div className="item_details">
-              <h3>Secure Transactions</h3>
-              <p>
-                Enjoy peace of mind with our state-of-the-art encryption. Your
-                financial data is protected, ensuring that all transactions are
-                secure and private
-              </p>
-            </div>
-            <button className="primary">Read more</button>
-          </div>
-          <div className="item">
-            <div className="logo">
-              <img src={friendly} alt="" />
-            </div>
-            <div className="item_details">
-              <h3>User Friendly</h3>
-              <p>
-                Navigate your expenses with ease using our intuitive and
-                user-friendly interface. Manage and track your splits
-                effortlessly, with a clean design that makes organizing finances
-                a breeze.
-              </p>
-            </div>
-            <button className="primary">Read more</button>
           </div>
         </div>
-      </div>
-      <div className="banner">
-        <div className="banner__image">
-          <img src={banner} alt="" />
-        </div>
-        <div className="banner__details">
-          <p className="title">
-            Effortlessly Split Expenses, Anytime, Anywhere.
+      </section>
+
+      {/* Features — each with a unique animated visualization */}
+      <section className="landing__features">
+        {/* Card 1: Split with anyone — avatars cascading in */}
+        <article className="landing__feature">
+          <div className="landing__viz landing__viz--avatars" aria-hidden>
+            <span className="landing__viz-av landing__viz-av--1">SA</span>
+            <span className="landing__viz-av landing__viz-av--2">AL</span>
+            <span className="landing__viz-av landing__viz-av--3">JO</span>
+            <span className="landing__viz-av landing__viz-av--4">RI</span>
+            <span className="landing__viz-av landing__viz-av--plus">+</span>
+          </div>
+          <span className="landing__feature-icon">
+            <FaUsers />
+          </span>
+          <h3>Split with anyone</h3>
+          <p>
+            Add a group, drop in names — no accounts required for members.
+            Track expenses across trips, roommates, and one-off plans.
           </p>
-          <p className="description">
-            Track shared bills, settle payments, and keep your finances balanced
-            with friends and family—because life’s too short for awkward money
-            moments!
+        </article>
+
+        {/* Card 2: Settle in fewest steps — 5 lines collapsing to 3 */}
+        <article className="landing__feature">
+          <div className="landing__viz landing__viz--simplify" aria-hidden>
+            <div className="landing__viz-stack landing__viz-stack--many">
+              <span /><span /><span /><span /><span />
+            </div>
+            <FaArrowRight className="landing__viz-arrow" />
+            <div className="landing__viz-stack landing__viz-stack--few">
+              <span /><span /><span />
+            </div>
+          </div>
+          <span className="landing__feature-icon">
+            <FaBolt />
+          </span>
+          <h3>Settle in fewest steps</h3>
+          <p>
+            We compute who owes whom and simplify the chain. See pair-wise
+            debts or the minimum-transactions plan with one tap.
           </p>
+        </article>
+
+        {/* Card 3: Money math — animated calculation ticker */}
+        <article className="landing__feature">
+          <div className="landing__viz landing__viz--math" aria-hidden>
+            <code className="landing__viz-line landing__viz-line--1">
+              ₹1,000.00 ÷ 3
+            </code>
+            <code className="landing__viz-line landing__viz-line--2">
+              = ₹333.34 + ₹333.33 + ₹333.33
+            </code>
+            <code className="landing__viz-line landing__viz-line--3">
+              ✓ exactly ₹1,000.00
+            </code>
+          </div>
+          <span className="landing__feature-icon">
+            <FaShieldAlt />
+          </span>
+          <h3>Money math you can trust</h3>
+          <p>
+            Cent-precise arithmetic, never floating-point drift. Every paisa
+            is accounted for — even with uneven splits and percentages.
+          </p>
+        </article>
+      </section>
+
+      {/* See it in action */}
+      <section className="landing__action">
+        <div className="landing__action-copy">
+          <span className="landing__eyebrow">See it in action</span>
+          <h2 className="landing__action-title">
+            Add an expense.{" "}
+            <span className="landing__title-accent">We do the math.</span>
+          </h2>
+          <p className="landing__lede">
+            Type what you spent, pick who shared it, and we'll work out who
+            owes what — to the paise. Auto-categorize from the description,
+            simplify long chains of debts, and edit anything you got wrong.
+          </p>
+
+          <ul className="landing__action-points">
+            <li>
+              <span>
+                <FaMagic />
+              </span>
+              <div>
+                <strong>Auto-categorize</strong>
+                <small>
+                  Type "metro recharge" → Travel. Type "pizza" → Dining. No
+                  picking from a dropdown.
+                </small>
+              </div>
+            </li>
+            <li>
+              <span>
+                <FaChartPie />
+              </span>
+              <div>
+                <strong>Reports built-in</strong>
+                <small>
+                  Spend by member, by category, by month. Drill into who paid
+                  what whenever you need it.
+                </small>
+              </div>
+            </li>
+            <li>
+              <span>
+                <FaBolt />
+              </span>
+              <div>
+                <strong>Two views, your call</strong>
+                <small>
+                  Direct (pair-wise) shows real history. Simplified shows the
+                  minimum payments. Switch with one tap.
+                </small>
+              </div>
+            </li>
+          </ul>
         </div>
-      </div>
-      <div className="testimonials">
-        <p className="title stylish-border">Our Testimonials</p>
-        <p className="title_primary">Real Stories, Real Savings</p>
-        <div className="testimonials__cards">
-          <div className="card">
-            <p>
-              “Fundamental” for tracking finances. As good as WhatsApp for
-              containing awkwardness.
-            </p>
-            <h3>- hindustan Times</h3>
+
+        {/* Stacked mock cards */}
+        <div className="landing__action-mocks" aria-hidden>
+          <div className="landing__mock-expense">
+            <div className="landing__mock-expense-head">
+              <span className="landing__mock-cat">
+                <FaUtensils />
+              </span>
+              <div>
+                <strong>Dinner at Maya's</strong>
+                <small>Today · Sam paid</small>
+              </div>
+              <span className="landing__mock-amt">₹2,400</span>
+            </div>
+            <div className="landing__mock-expense-split">
+              <span>Split equally between</span>
+              <div>
+                <em>Sam</em>
+                <em>Alex</em>
+                <em>Riley</em>
+                <em>Jordan</em>
+              </div>
+              <strong>₹600 each</strong>
+            </div>
           </div>
-          <div className="card">
-            <p>
-              An absolute lifesaver for group expenses! Whether it’s rent or
-              groceries, everything is split fairly and tracked seamlessly.
-            </p>
-            <h3>- Rohit S</h3>
+
+          <div className="landing__mock-cat-bar">
+            <div className="landing__mock-cat-row">
+              <span>
+                <FaUtensils /> Dining
+              </span>
+              <div className="landing__mock-bar">
+                <div
+                  style={{ width: "72%" }}
+                  className="landing__mock-bar-fill landing__mock-bar-fill--a"
+                />
+              </div>
+              <strong>₹3,400</strong>
+            </div>
+            <div className="landing__mock-cat-row">
+              <span>
+                <FaPlane /> Travel
+              </span>
+              <div className="landing__mock-bar">
+                <div
+                  style={{ width: "48%" }}
+                  className="landing__mock-bar-fill landing__mock-bar-fill--b"
+                />
+              </div>
+              <strong>₹2,200</strong>
+            </div>
+            <div className="landing__mock-cat-row">
+              <span>
+                <FaShoppingBag /> Shopping
+              </span>
+              <div className="landing__mock-bar">
+                <div
+                  style={{ width: "30%" }}
+                  className="landing__mock-bar-fill landing__mock-bar-fill--c"
+                />
+              </div>
+              <strong>₹1,400</strong>
+            </div>
           </div>
-          <div className="card">
-            <p>
-              “I love how easy it is to keep track of shared expenses. The app
-              makes settling up hassle-free, especially after group trips.
-            </p>
-            <h3>- Sonal</h3>
-          </div>
-          <div className="card">
-            <p>
-              No more spreadsheets or mental math! This app does it all, and
-              it’s super easy to use. Perfect for roommates and families!
-            </p>
-            <h3>- Pranab</h3>
-          </div>
-          <div className="card">
-            <p>
-              Amazing app! It saves so much time and effort in managing shared
-              finances, and no one has to worry about who owes what.
-            </p>
-            <h3>- Prabha S</h3>
-          </div>
-          <div className="card">
-            <p>
-              This app has made splitting so simple! No more awkward moments. I
-              use it for every trip and dinner outing now.
-            </p>
-            <h3>- Samay</h3>
+
+          <div className="landing__mock-toast">
+            <span className="landing__mock-toast-dot" />
+            <div>
+              <strong>Auto-categorized</strong>
+              <small>"pizza for friends" → Dining 🍕</small>
+            </div>
           </div>
         </div>
-      </div>
-    </>
+      </section>
+
+      {/* Closing CTA */}
+      <section className="landing__closing">
+        <h2>Ready to stop chasing receipts?</h2>
+        <p>It takes 30 seconds to create a group and add your first expense.</p>
+        {!isAuthenticated && (
+          <Link to="/signup" className="landing__cta landing__cta--primary">
+            Create your first group <FaArrowRight />
+          </Link>
+        )}
+      </section>
+    </main>
   );
 };
 

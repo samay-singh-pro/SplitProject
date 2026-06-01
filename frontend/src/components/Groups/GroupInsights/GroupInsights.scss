@@ -3,7 +3,7 @@
 // desktop. Pulls fresh stats + expenses for the chosen group.
 
 $brand-soft: rgba(110, 26, 110, 0.08);
-$danger: #ef4444;
+$danger: var(--accent-danger);
 
 .groupIns-overlay {
   position: fixed;
@@ -17,6 +17,9 @@ $danger: #ef4444;
   padding: clamp(8px, 3vw, 24px);
   animation: gi-fade 0.2s ease-out;
 
+  // The drawer is portaled to <body> and renders above the bottom tab bar,
+  // so the sheet can run to the very bottom of the screen and cover it —
+  // no reserved gap needed (that gap read as dead space at the bottom).
   @media (max-width: 640px) {
     align-items: flex-end;
     padding: 0;
@@ -38,8 +41,12 @@ $danger: #ef4444;
   flex-direction: column;
   animation: gi-pop 0.22s cubic-bezier(0.2, 0.8, 0.2, 1);
 
+  // Bottom sheet on phones: runs to the bottom edge, leaving a small gap at
+  // the top so the cover + close button stay clear of the status bar.
+  // (dvh tracks the visible viewport on mobile; vh is the fallback.)
   @media (max-width: 640px) {
-    max-height: 92vh;
+    max-height: calc(100vh - 24px);
+    max-height: calc(100dvh - 24px);
     border-radius: 18px 18px 0 0;
     border-bottom: none;
     animation: gi-slide 0.22s cubic-bezier(0.2, 0.8, 0.2, 1);
@@ -110,6 +117,11 @@ $danger: #ef4444;
     cursor: pointer;
     font-size: 0.85rem;
     z-index: 2;
+
+    @media (max-width: 640px) {
+      width: 40px;
+      height: 40px;
+    }
   }
 
   &__title-wrap {
@@ -168,6 +180,12 @@ $danger: #ef4444;
     flex: 1 1 auto;
     min-height: 0;
 
+    // Sheet now reaches the screen bottom on phones — pad past the home
+    // indicator so the last actions aren't tucked under it.
+    @media (max-width: 640px) {
+      padding-bottom: calc(18px + env(safe-area-inset-bottom, 0px));
+    }
+
     scrollbar-width: thin;
     scrollbar-color: var(--border-color) transparent;
 
@@ -177,6 +195,11 @@ $danger: #ef4444;
     &::-webkit-scrollbar-thumb {
       background: var(--border-color);
       border-radius: 3px;
+    }
+
+    @media (max-width: 640px) {
+      padding: 16px;
+      gap: 16px;
     }
   }
 
@@ -273,7 +296,7 @@ $danger: #ef4444;
       color: #f59e0b;
     }
     &--red {
-      background: rgba(239, 68, 68, 0.14);
+      background: var(--accent-danger-soft-strong);
       color: $danger;
     }
   }
@@ -490,8 +513,12 @@ $danger: #ef4444;
       &:hover {
         border-color: $danger;
         color: $danger;
-        background: rgba(239, 68, 68, 0.06);
+        background: var(--accent-danger-soft);
       }
+    }
+
+    @media (max-width: 640px) {
+      min-height: 44px;
     }
   }
 
@@ -515,6 +542,12 @@ $danger: #ef4444;
     font-family: inherit;
     cursor: pointer;
     transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+
+    @media (max-width: 640px) {
+      padding: 11px 16px;
+      font-size: 0.9rem;
+      min-height: 44px;
+    }
 
     &--ghost {
       background: transparent;
@@ -561,6 +594,12 @@ $danger: #ef4444;
   justify-content: center;
   padding: 16px;
   animation: gi-fade 0.18s ease-out;
+
+  // Phone: dock the dialog as a bottom sheet (matches the other modals).
+  @media (max-width: 640px) {
+    align-items: flex-end;
+    padding: 0;
+  }
 }
 
 .groupIns-confirm {
@@ -574,12 +613,18 @@ $danger: #ef4444;
   text-align: center;
   animation: gi-pop 0.22s cubic-bezier(0.2, 0.8, 0.2, 1);
 
+  @media (max-width: 640px) {
+    max-width: 100%;
+    border-radius: 18px 18px 0 0;
+    padding: 20px 16px calc(20px + env(safe-area-inset-bottom, 0px));
+  }
+
   &__icon {
     width: 52px;
     height: 52px;
     margin: 0 auto 12px;
     border-radius: 16px;
-    background: rgba(239, 68, 68, 0.12);
+    background: var(--accent-danger-soft-strong);
     color: $danger;
     display: inline-flex;
     align-items: center;

@@ -10,6 +10,11 @@
   backdrop-filter: blur(2px);
   animation: ee-fade 0.18s ease-out;
 
+  @media (max-width: 640px) {
+    align-items: flex-end;
+    padding: 0;
+  }
+
   &__panel {
     width: min(560px, 100%);
     max-height: 90vh;
@@ -21,6 +26,16 @@
     flex-direction: column;
     overflow: hidden;
     animation: ee-pop 0.2s ease-out;
+
+    @media (max-width: 640px) {
+      width: 100%;
+      max-width: 100%;
+      max-height: 92vh;
+      margin: 0;
+      border-radius: 18px 18px 0 0;
+      border-bottom: none;
+      animation: ee-slide 0.22s cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
   }
 
   &__head {
@@ -30,6 +45,13 @@
     padding: 14px 18px;
     border-bottom: 1px solid var(--border-light);
     background: var(--bg-secondary);
+
+    @media (max-width: 640px) {
+      position: sticky;
+      top: 0;
+      z-index: 2;
+      padding: 16px;
+    }
 
     h3 {
       margin: 0;
@@ -52,6 +74,11 @@
     cursor: pointer;
     transition: all 0.2s ease;
 
+    @media (max-width: 640px) {
+      width: 40px;
+      height: 40px;
+    }
+
     &:hover {
       background: var(--bg-hover);
       color: var(--text-primary);
@@ -65,10 +92,19 @@
     flex-direction: column;
     gap: 12px;
 
+    @media (max-width: 640px) {
+      padding: 16px;
+      gap: 16px;
+    }
+
     .ng-field > label {
       display: flex;
       align-items: center;
       gap: 8px;
+
+      @media (max-width: 640px) {
+        font-size: 0.8rem;
+      }
     }
   }
 
@@ -97,6 +133,11 @@
     cursor: pointer;
     font-family: inherit;
     transition: all 0.2s ease;
+
+    @media (max-width: 640px) {
+      min-height: 36px;
+      padding: 8px 6px;
+    }
 
     svg {
       font-size: 0.78rem;
@@ -149,6 +190,12 @@
     font-weight: 500;
     cursor: pointer;
     transition: border-color 0.2s ease, box-shadow 0.2s ease;
+
+    @media (max-width: 640px) {
+      font-size: 16px;
+      padding: 9px 12px;
+      min-height: 44px;
+    }
 
     &:hover {
       border-color: var(--brand-primary);
@@ -275,8 +322,16 @@
       font-family: inherit;
       color: var(--text-primary);
 
+      @media (max-width: 640px) {
+        font-size: 16px;
+      }
+
       &::placeholder {
         color: var(--text-tertiary);
+
+        @media (max-width: 640px) {
+          font-size: 14px;
+        }
       }
     }
 
@@ -463,7 +518,7 @@
     input {
       flex: 1;
       min-width: 0;
-      border: none;
+      border: none !important;
       outline: none;
       background: transparent;
       padding: 6px;
@@ -471,11 +526,22 @@
       font-family: inherit;
       color: var(--text-primary);
       -moz-appearance: textfield;
+      box-shadow: none !important;
+
+      @media (max-width: 640px) {
+        font-size: 16px;
+      }
 
       &::-webkit-outer-spin-button,
       &::-webkit-inner-spin-button {
         -webkit-appearance: none;
         margin: 0;
+      }
+
+      &:hover,
+      &:focus {
+        border: none !important;
+        box-shadow: none !important;
       }
     }
   }
@@ -494,8 +560,8 @@
     }
 
     &--bad {
-      color: #ef4444;
-      background: rgba(239, 68, 68, 0.1);
+      color: var(--accent-danger);
+      background: var(--accent-danger-soft);
     }
   }
 
@@ -507,6 +573,33 @@
     padding: 12px 18px;
     border-top: 1px solid var(--border-light);
     background: var(--bg-secondary);
+
+    // Keep both buttons on a single row on phones — they share the
+    // width evenly and shrink (rather than wrap) on very narrow screens.
+    @media (max-width: 640px) {
+      position: sticky;
+      bottom: 0;
+      z-index: 2;
+      padding: 16px;
+      gap: 10px;
+
+      button {
+        flex: 1;
+        min-height: 44px;
+        padding: 11px 12px;
+        font-size: 0.9rem;
+        white-space: nowrap;
+      }
+    }
+
+    @media (max-width: 380px) {
+      gap: 8px;
+
+      button {
+        padding: 11px 8px;
+        font-size: 0.84rem;
+      }
+    }
   }
 }
 
@@ -533,6 +626,15 @@
   }
   to {
     opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes ee-slide {
+  from {
+    transform: translateY(100%);
+  }
+  to {
     transform: translateY(0);
   }
 }

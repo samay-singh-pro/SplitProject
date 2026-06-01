@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useDispatch } from "react-redux";
 import { toast } from "react-toastify";
 import "./EditGroupModal.scss";
@@ -13,12 +14,15 @@ import {
   CATEGORY_EMOJI,
   ALL_CATEGORIES,
 } from "../../../utils/categoryInfer";
+import { getCurrencySymbol } from "../../../utils/currency";
 import {
   FaTimes,
   FaCheck,
   FaPenFancy,
   FaTag,
   FaUserPlus,
+  FaEnvelope,
+  FaUserCheck,
   FaMagic,
   FaChevronDown,
   FaCloudUploadAlt,
@@ -45,6 +49,7 @@ const formatMoney = (n) =>
 
 const EditGroupModal = ({ open, group, onClose }) => {
   const dispatch = useDispatch();
+  const symbol = getCurrencySymbol(group?.currency);
   const fileInputRef = useRef(null);
 
   const [name, setName] = useState("");
@@ -56,6 +61,7 @@ const EditGroupModal = ({ open, group, onClose }) => {
   const [imagePreview, setImagePreview] = useState(null);
 
   const [newMemberName, setNewMemberName] = useState("");
+  const [newMemberEmail, setNewMemberEmail] = useState("");
   const [adding, setAdding] = useState(false);
   const [saving, setSaving] = useState(false);
   const [memberError, setMemberError] = useState("");
@@ -72,6 +78,7 @@ const EditGroupModal = ({ open, group, onClose }) => {
     setImageFile(null);
     setImagePreview(null);
     setNewMemberName("");
+    setNewMemberEmail("");
     setMemberError("");
     setFieldErrors({});
   }, [open, group]);
@@ -151,14 +158,20 @@ const EditGroupModal = ({ open, group, onClose }) => {
     setAdding(true);
     setMemberError("");
     const result = await dispatch(
-      addGroupMember({ groupId: group._id, name: value })
+      addGroupMember({
+        groupId: group._id,
+        name: value,
+        email: newMemberEmail.trim(),
+      })
     );
     setAdding(false);
 
     if (result.type.endsWith("/fulfilled")) {
       setNewMemberName("");
+      setNewMemberEmail("");
     } else {
       const err =
+        result.payload?.errors?.email ||
         result.payload?.errors?.name ||
         result.payload?.message ||
         "Failed to add member.";
@@ -180,7 +193,7 @@ const EditGroupModal = ({ open, group, onClose }) => {
       const verb = d.direction === "is_owed" ? "is owed" : "owes";
       const amt = formatMoney(Math.abs(d.netBalance || 0));
       toast.error(
-        `Can't remove ${d.name}: still ${verb} ₹${amt}. Settle that balance first.`,
+        `Can't remove ${d.name}: still ${verb} ${symbol}${amt}. Settle that balance first.`,
         { autoClose: 5000 }
       );
     } else {
@@ -192,7 +205,7 @@ const EditGroupModal = ({ open, group, onClose }) => {
     if (e.target === e.currentTarget) onClose?.();
   };
 
-  return (
+  return createPortal(
     <div
       className="editGroup-overlay"
       role="dialog"
@@ -344,32 +357,60 @@ const EditGroupModal = ({ open, group, onClose }) => {
           <section className="editGroup__section">
             <h4>Members</h4>
 
-            <div className="editGroup__add">
-              <FaUserPlus />
-              <input
-                type="text"
-                value={newMemberName}
-                onChange={(e) => {
-                  setNewMemberName(e.target.value);
-                  setMemberError("");
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    e.preventDefault();
-                    handleAddMember();
-                  }
-                }}
-                placeholder="Add member by name"
-                maxLength={40}
-              />
+            <div className="editGroup__add-grid">
+              <div className="editGroup__add editGroup__add--name">
+                <FaUserPlus />
+                <input
+                  type="text"
+                  value={newMemberName}
+                  onChange={(e) => {
+                    setNewMemberName(e.target.value);
+                    setMemberError("");
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      handleAddMember();
+                    }
+                  }}
+                  placeholder="Name"
+                  maxLength={40}
+                />
+              </div>
+              <div className="editGroup__add editGroup__add--phone">
+                <FaEnvelope />
+                <input
+                  type="email"
+                  value={newMemberEmail}
+                  onChange={(e) => {
+                    setNewMemberEmail(e.target.value);
+                    setMemberError("");
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      handleAddMember();
+                    }
+                  }}
+                  placeholder="Email (optional)"
+                />
+              </div>
               <button
                 type="button"
+                className="editGroup__add-btn"
                 onClick={handleAddMember}
                 disabled={!newMemberName.trim() || adding}
               >
                 {adding ? "Adding…" : "Add"}
               </button>
             </div>
+
+            <p className="editGroup__add-hint">
+              <FaUserCheck />
+              If their email is on splitit they&apos;ll get an invite —
+              otherwise they&apos;re added as an offline member.
+            </p>
+
             {memberError && (
               <span className="editGroup__err">{memberError}</span>
             )}
@@ -383,7 +424,14 @@ const EditGroupModal = ({ open, group, onClose }) => {
                   <span className="editGroup__avatar">
                     {initials(m.name)}
                   </span>
-                  <span className="editGroup__member-name">{m.name}</span>
+                  <span className="editGroup__member-name">
+                    {m.name}
+                    {m.email && (
+                      <small className="editGroup__member-phone">
+                        {m.email}
+                      </small>
+                    )}
+                  </span>
                   <button
                     type="button"
                     className="editGroup__member-remove"
@@ -446,7 +494,8 @@ const EditGroupModal = ({ open, group, onClose }) => {
           </button>
         </footer>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 

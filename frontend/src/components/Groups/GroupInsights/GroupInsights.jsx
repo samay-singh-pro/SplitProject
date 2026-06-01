@@ -1,12 +1,14 @@
 import { useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { toast } from "react-toastify";
 import "./GroupInsights.scss";
 import { fetchGroupStats } from "../../../store/statsSlice";
 import { getAllExpenses } from "../../../store/expenseSlice";
-import { deleteGroup } from "../../../store/groupSlice";
+import { deleteGroup, includeMe } from "../../../store/groupSlice";
 import { useCurrentGroup } from "../../../hooks/useCurrentGroup";
 import { CATEGORY_EMOJI } from "../../../utils/categoryInfer";
+import { getCurrencySymbol } from "../../../utils/currency";
 import EditGroupModal from "../EditGroupModal/EditGroupModal";
 import {
   FaTimes,
@@ -22,6 +24,7 @@ import {
   FaTrash,
   FaExclamationTriangle,
   FaChevronDown,
+  FaUserPlus,
 } from "react-icons/fa";
 
 const formatMoney = (n) =>
@@ -43,7 +46,20 @@ const GroupInsights = ({ group, open, onClose, onNavigate }) => {
   const dispatch = useDispatch();
   const { stats, loading } = useSelector((state) => state.stats);
   const { expenses } = useSelector((state) => state.expense);
+  const { userInfo } = useSelector((state) => state.login);
+  // Insights render in the group's own currency.
+  const symbol = getCurrencySymbol(group?.currency);
   const [currentGroupId, setCurrentGroup] = useCurrentGroup();
+
+  // Is the logged-in user already a member of this group? If not, offer
+  // an "Include me" action so the money they pay here flows to Personal.
+  const myId = userInfo?._id?.toString();
+  const isMember = (group?.members || []).some(
+    (m) => m.linkedUserId?.toString() === myId && !m.removed
+  );
+  const handleIncludeMe = () => {
+    if (group?._id) dispatch(includeMe(group._id));
+  };
   const [editOpen, setEditOpen] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -51,6 +67,12 @@ const GroupInsights = ({ group, open, onClose, onNavigate }) => {
   // item), balances collapsed (secondary info, can grow long).
   const [balancesOpen, setBalancesOpen] = useState(false);
   const [settlesOpen, setSettlesOpen] = useState(true);
+  // Fall back to the icon tile if the group's cover URL fails to load
+  // (deleted from Cloudinary, network issue, etc.).
+  const [imageBroken, setImageBroken] = useState(false);
+  useEffect(() => {
+    setImageBroken(false);
+  }, [group?.image]);
 
   useEffect(() => {
     if (open && group?._id) {
@@ -138,7 +160,7 @@ const GroupInsights = ({ group, open, onClose, onNavigate }) => {
 
   const emoji = CATEGORY_EMOJI[group.category] || "✨";
 
-  return (
+  return createPortal(
     <div
       className="groupIns-overlay"
       role="dialog"
@@ -149,8 +171,12 @@ const GroupInsights = ({ group, open, onClose, onNavigate }) => {
     >
       <div className="groupIns">
         <div className="groupIns__cover">
-          {group.image ? (
-            <img src={group.image} alt="" />
+          {group.image && !imageBroken ? (
+            <img
+              src={group.image}
+              alt=""
+              onError={() => setImageBroken(true)}
+            />
           ) : (
             <div className="groupIns__cover-fallback">
               <FaImage />
@@ -190,7 +216,7 @@ const GroupInsights = ({ group, open, onClose, onNavigate }) => {
                   </span>
                   <div>
                     <small>Total spent</small>
-                    <strong>₹{formatMoney(totalSpent)}</strong>
+                    <strong>{symbol}{formatMoney(totalSpent)}</strong>
                   </div>
                 </div>
 
@@ -220,7 +246,7 @@ const GroupInsights = ({ group, open, onClose, onNavigate }) => {
                   </span>
                   <div>
                     <small>Outstanding</small>
-                    <strong>₹{formatMoney(totalOutstanding)}</strong>
+                    <strong>{symbol}{formatMoney(totalOutstanding)}</strong>
                   </div>
                 </div>
 
@@ -273,11 +299,11 @@ const GroupInsights = ({ group, open, onClose, onNavigate }) => {
                             </span>
                             {isOwed ? (
                               <span className="groupIns__bal-amt groupIns__bal-amt--pos">
-                                +₹{formatMoney(row.net)}
+                                +{symbol}{formatMoney(row.net)}
                               </span>
                             ) : owes ? (
                               <span className="groupIns__bal-amt groupIns__bal-amt--neg">
-                                −₹{formatMoney(Math.abs(row.net))}
+                                −{symbol}{formatMoney(Math.abs(row.net))}
                               </span>
                             ) : (
                               <span className="groupIns__bal-amt groupIns__bal-amt--zero">
@@ -327,7 +353,7 @@ const GroupInsights = ({ group, open, onClose, onNavigate }) => {
                               <strong>{s.fromName}</strong> → {s.toName}
                             </span>
                             <strong className="groupIns__settle-amt">
-                              ₹{formatMoney(s.amount)}
+                              {symbol}{formatMoney(s.amount)}
                             </strong>
                           </li>
                         ))}
@@ -350,6 +376,16 @@ const GroupInsights = ({ group, open, onClose, onNavigate }) => {
 
               {/* Manage row */}
               <div className="groupIns__manage">
+                {!isMember && (
+                  <button
+                    type="button"
+                    className="groupIns__manage-btn"
+                    onClick={handleIncludeMe}
+                    title="Add yourself so your spending here shows in Personal"
+                  >
+                    <FaUserPlus /> Include me
+                  </button>
+                )}
                 <button
                   type="button"
                   className="groupIns__manage-btn"
@@ -435,7 +471,8 @@ const GroupInsights = ({ group, open, onClose, onNavigate }) => {
           </div>
         </div>
       )}
-    </div>
+    </div>,
+    document.body
   );
 };
 

@@ -7,6 +7,7 @@ import {
   addMember,
   removeMember,
   deleteGroup,
+  includeMe,
 } from "../controllers/groupController.js";
 import multer from "multer";
 import { config } from "dotenv";
@@ -54,5 +55,7 @@ router.patch(
 router.delete("/:groupId", authenticated, deleteGroup);
 router.post("/:groupId/members", authenticated, addMember);
 router.delete("/:groupId/members/:memberId", authenticated, removeMember);
+// Add the current user to the group as an accepted member.
+router.post("/:groupId/include-me", authenticated, includeMe);
 
 export default router;

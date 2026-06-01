@@ -52,10 +52,14 @@
     font-size: 0.78rem;
   }
 
-  // Tablet & mobile: lift above the fixed bottom tab bar.
+  // Tablet & mobile: lift above the fixed bottom tab bar. The tab bar
+  // is ~80px tall (icons + labels + padding), plus safe-area on devices
+  // with home-indicator. Use a 16px breathing room above that so the
+  // FAB never collides with — or sits flush against — the nav.
   @media (max-width: 850px) {
-    bottom: calc(76px + env(safe-area-inset-bottom, 0px));
+    bottom: calc(80px + env(safe-area-inset-bottom, 0px) + 16px);
     right: 16px;
+    z-index: 96;
   }
 
   // Mobile: pill collapses to a circle icon to save space.

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { addExpense, getAllExpenses } from "../../store/expenseSlice";
 import { fetchGroupStats } from "../../store/statsSlice";
+import { getCurrencySymbol } from "../../utils/currency";
 import "./QuickAddExpense.scss";
 import {
   FaTimes,
@@ -29,6 +30,8 @@ const initials = (value) => {
 const QuickAddExpense = ({ open, onClose, group }) => {
   const dispatch = useDispatch();
   const { loading } = useSelector((state) => state.expense);
+  // Show the group's currency (not the viewer's personal preference).
+  const symbol = getCurrencySymbol(group?.currency);
   const amountRef = useRef(null);
 
   // Only active (non-removed) members can take part in new expenses.
@@ -154,7 +157,7 @@ const QuickAddExpense = ({ open, onClose, group }) => {
             errors.amount ? "quickAdd__amount--error" : ""
           }`}
         >
-          <span className="quickAdd__currency">₹</span>
+          <span className="quickAdd__currency">{symbol}</span>
           <input
             ref={amountRef}
             type="number"

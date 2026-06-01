@@ -1,0 +1,988 @@
+// ---------- Personal scope: form, modal, report, list ----------
+$brand-soft: rgba(110, 26, 110, 0.08);
+
+// -------- Form (reuses .ng-field / .ng-btn from the group forms) --------
+.pf {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+
+  &__amount {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 14px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+
+    span {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--brand-primary);
+    }
+    // `.ng-field &` (= .ng-field .pf__amount input) outranks the global
+    // `.ng-field input` box, so the input sits flush inside this pill
+    // instead of drawing its own border (the double-border bug).
+    .ng-field & input,
+    input {
+      flex: 1;
+      min-width: 0;
+      border: none;
+      background: transparent;
+      padding: 4px 0;
+      border-radius: 0;
+      font-size: 1.2rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      font-family: inherit;
+      &:focus {
+        outline: none;
+      }
+    }
+  }
+
+  &__row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 210px);
+    gap: 14px;
+    align-items: start;
+
+    @media (max-width: 480px) {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  &__cat {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  &__cat-label,
+  &__date label {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    svg {
+      color: var(--brand-primary);
+      font-size: 0.8rem;
+    }
+  }
+
+  &__cat-trigger {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 12px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    color: var(--text-primary);
+    font-family: inherit;
+    font-size: 0.9rem;
+    cursor: pointer;
+
+    strong {
+      font-weight: 600;
+    }
+    svg:last-child {
+      margin-left: auto;
+      font-size: 0.7rem;
+      color: var(--text-tertiary);
+      transition: transform 0.2s ease;
+    }
+    &.is-open svg:last-child {
+      transform: rotate(180deg);
+    }
+  }
+
+  &__chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 6px;
+    padding: 10px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+  }
+
+  &__chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 999px;
+    font-size: 0.8rem;
+    font-family: inherit;
+    color: var(--text-secondary);
+    cursor: pointer;
+
+    &.is-active {
+      background: $brand-soft;
+      border-color: var(--brand-primary);
+      color: var(--brand-primary);
+      font-weight: 600;
+    }
+  }
+
+  &__date {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+
+    input {
+      padding: 10px 12px;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      color: var(--text-primary);
+      font-family: inherit;
+      font-size: 0.9rem;
+      &:focus {
+        outline: none;
+        border-color: var(--brand-primary);
+      }
+    }
+  }
+
+  &__submit {
+    align-self: flex-start;
+    @media (max-width: 480px) {
+      align-self: stretch;
+    }
+  }
+}
+
+// -------- Modal (add / edit from the list) --------
+.pModal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  background: rgba(15, 12, 20, 0.5);
+  backdrop-filter: blur(3px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  animation: pm-fade 0.18s ease-out;
+}
+
+.pModal {
+  width: 100%;
+  max-width: 460px;
+  max-height: 90vh;
+  overflow-y: auto;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 18px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.3);
+  animation: pm-rise 0.2s cubic-bezier(0.22, 1, 0.36, 1);
+
+  &__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 18px 12px;
+
+    h3 {
+      margin: 0;
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+  }
+
+  &__close {
+    width: 32px;
+    height: 32px;
+    border-radius: 9px;
+    border: 1px solid var(--border-color);
+    background: transparent;
+    color: var(--text-tertiary);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    &:hover {
+      color: var(--brand-primary);
+      border-color: var(--brand-primary);
+    }
+  }
+
+  &__body {
+    padding: 6px 18px 20px;
+  }
+}
+
+@keyframes pm-rise {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+@keyframes pm-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+// -------- Report (insights) --------
+.pReport {
+  // Match the standard content width used by every other Reports
+  // section (KPIs, charts, placeholder) so the personal cards — and the
+  // "no spending" empty card — line up instead of stretching wider.
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+
+  &__hero {
+    background: linear-gradient(
+      135deg,
+      var(--brand-primary),
+      var(--brand-secondary)
+    );
+    border-radius: 18px;
+    padding: 22px 20px;
+    color: #fff;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  &__hero-label {
+    font-size: 0.8rem;
+    opacity: 0.85;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  &__hero-amount {
+    font-size: 2.2rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+  }
+  &__hero-cur {
+    font-size: 1.3rem;
+    font-weight: 700;
+    margin-right: 2px;
+    opacity: 0.9;
+  }
+
+  &__trend {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    margin-top: 4px;
+    opacity: 0.95;
+    svg {
+      font-size: 0.7rem;
+    }
+  }
+
+  &__tiles {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  &__tile {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 14px;
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+
+    &-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.74rem;
+      color: var(--text-tertiary);
+      font-weight: 600;
+      svg {
+        color: var(--brand-primary);
+        font-size: 0.72rem;
+      }
+    }
+    strong {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    small {
+      font-size: 0.76rem;
+      color: var(--text-tertiary);
+    }
+  }
+
+  &__breakdown {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  &__section-label {
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  &__bar-row {
+    display: grid;
+    grid-template-columns: minmax(90px, 0.9fr) minmax(0, 1.4fr) auto;
+    align-items: center;
+    gap: 10px;
+  }
+
+  &__bar-name {
+    font-size: 0.84rem;
+    color: var(--text-primary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &__bar-track {
+    height: 8px;
+    background: var(--bg-secondary);
+    border-radius: 999px;
+    overflow: hidden;
+  }
+  &__bar-fill {
+    display: block;
+    height: 100%;
+    border-radius: 999px;
+    background: linear-gradient(
+      90deg,
+      var(--brand-primary),
+      var(--brand-secondary)
+    );
+  }
+
+  &__bar-val {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    white-space: nowrap;
+  }
+
+  &--empty {
+    align-items: center;
+    text-align: center;
+    padding: clamp(40px, 8vw, 64px) 24px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 18px;
+
+    h3 {
+      margin: 0 0 6px;
+      font-size: 1.1rem;
+      color: var(--text-primary);
+    }
+    p {
+      margin: 0;
+      max-width: 360px;
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+    }
+  }
+
+  &__empty-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 18px;
+    background: $brand-soft;
+    color: var(--brand-primary);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    margin-bottom: 14px;
+  }
+}
+
+// -------- List (feed) --------
+.pList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+
+  &__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    &-title {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+  }
+
+  &__add {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    border: none;
+    border-radius: 999px;
+    background: var(--brand-primary);
+    color: #fff;
+    font-family: inherit;
+    font-size: 0.83rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.18s ease;
+    &:hover {
+      background: var(--brand-hover);
+    }
+  }
+
+  // ---- Filters (search + source) ----
+  &__filters {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  &__search {
+    flex: 1 1 200px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 10px 0 12px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 999px;
+    transition: border-color 0.18s ease, box-shadow 0.18s ease;
+
+    &:focus-within {
+      border-color: var(--brand-primary);
+      box-shadow: 0 0 0 3px $brand-soft;
+    }
+
+    > svg {
+      color: var(--text-tertiary);
+      font-size: 0.82rem;
+      flex-shrink: 0;
+    }
+
+    input {
+      flex: 1;
+      min-width: 0;
+      border: none;
+      background: transparent;
+      padding: 9px 0;
+      font-family: inherit;
+      font-size: 0.86rem;
+      color: var(--text-primary);
+
+      &:focus {
+        outline: none;
+      }
+      &::placeholder {
+        color: var(--text-tertiary);
+      }
+
+      @media (max-width: 640px) {
+        font-size: 16px;
+        padding: 8px 0;
+      }
+
+      &::placeholder {
+        @media (max-width: 640px) {
+          font-size: 14px;
+        }
+      }
+    }
+
+    button {
+      width: 22px;
+      height: 22px;
+      border: none;
+      border-radius: 50%;
+      background: var(--bg-secondary);
+      color: var(--text-tertiary);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.62rem;
+      flex-shrink: 0;
+    }
+  }
+
+  &__src-tabs {
+    display: inline-flex;
+    padding: 3px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 999px;
+    gap: 2px;
+  }
+
+  &__src-tab {
+    padding: 7px 14px;
+    border: none;
+    background: transparent;
+    border-radius: 999px;
+    color: var(--text-tertiary);
+    font-family: inherit;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: color 0.15s ease, background 0.15s ease;
+
+    &--active {
+      background: var(--bg-card);
+      color: var(--brand-primary);
+      box-shadow: var(--shadow-sm);
+    }
+  }
+
+  &__summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 2px 4px;
+    font-size: 0.78rem;
+    color: var(--text-tertiary);
+
+    strong {
+      color: var(--text-primary);
+      font-size: 0.9rem;
+    }
+  }
+
+  &__items {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+
+    @media (max-width: 640px) {
+      gap: 6px;
+    }
+  }
+
+  &__item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 14px;
+
+    @media (max-width: 640px) {
+      padding: 8px 10px;
+      gap: 10px;
+      border-radius: 10px;
+    }
+  }
+
+  &__emoji {
+    width: 40px;
+    height: 40px;
+    flex-shrink: 0;
+    border-radius: 12px;
+    background: $brand-soft;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+
+    @media (max-width: 640px) {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      font-size: 0.95rem;
+    }
+  }
+
+  &__meta {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+
+    strong {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+
+      @media (max-width: 640px) {
+        font-size: 0.85rem;
+      }
+    }
+    small {
+      font-size: 0.76rem;
+      color: var(--text-tertiary);
+
+      @media (max-width: 640px) {
+        font-size: 0.7rem;
+      }
+    }
+  }
+
+  &__src {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    svg {
+      font-size: 0.66rem;
+    }
+  }
+
+  &__amt {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    white-space: nowrap;
+
+    @media (max-width: 640px) {
+      font-size: 0.85rem;
+    }
+  }
+
+  &__actions {
+    display: inline-flex;
+    gap: 4px;
+
+    button {
+      width: 30px;
+      height: 30px;
+      border-radius: 8px;
+      border: 1px solid var(--border-color);
+      background: transparent;
+      color: var(--text-tertiary);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.72rem;
+      transition: color 0.15s ease, border-color 0.15s ease;
+
+      @media (max-width: 640px) {
+        width: 28px;
+        height: 28px;
+        font-size: 0.7rem;
+        border-radius: 6px;
+      }
+
+      &:hover {
+        color: var(--brand-primary);
+        border-color: var(--brand-primary);
+      }
+      &:last-child:hover {
+        color: var(--accent-danger);
+        border-color: var(--accent-danger);
+      }
+    }
+  }
+
+  &__confirm {
+    display: inline-flex;
+    gap: 4px;
+
+    button {
+      padding: 6px 10px;
+      border-radius: 8px;
+      border: 1px solid var(--border-color);
+      background: var(--bg-secondary);
+      color: var(--text-secondary);
+      font-family: inherit;
+      font-size: 0.76rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    &-yes {
+      background: var(--accent-danger) !important;
+      color: #fff !important;
+      border-color: var(--accent-danger) !important;
+    }
+  }
+
+  &__badge {
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-tertiary);
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 999px;
+    padding: 4px 9px;
+  }
+
+  &__empty {
+    text-align: center;
+    padding: 48px 24px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+
+    h3 {
+      margin: 0 0 6px;
+      font-size: 1rem;
+      color: var(--text-primary);
+    }
+    p {
+      margin: 0 auto;
+      max-width: 320px;
+      color: var(--text-secondary);
+      font-size: 0.88rem;
+    }
+  }
+
+  &__empty-icon {
+    width: 54px;
+    height: 54px;
+    border-radius: 16px;
+    background: $brand-soft;
+    color: var(--brand-primary);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.3rem;
+    margin-bottom: 12px;
+  }
+
+  &__skel {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  &__skel-row {
+    height: 64px;
+    border-radius: 14px;
+    background: var(--bg-secondary);
+    animation: pl-pulse 1.3s ease-in-out infinite;
+  }
+}
+
+@keyframes pl-pulse {
+  0%,
+  100% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+// ---------- Mobile ----------
+// All rules below live inside the 640px breakpoint and must not touch
+// desktop. Inputs hit 16px so iOS never zoom-jumps on focus.
+@media (max-width: 640px) {
+  // -------- Form --------
+  .pf {
+    gap: 16px;
+    max-width: 100%;
+
+    &__amount {
+      padding: 6px 12px;
+
+      span {
+        font-size: 1rem;
+      }
+      .ng-field & input,
+      input {
+        font-size: 16px;
+        padding: 9px 0;
+      }
+    }
+
+    // Collapse the cat/date split to a single column (480 already does
+    // this, but extend the same here for the 480-640 band).
+    &__row {
+      grid-template-columns: 1fr;
+      gap: 16px;
+    }
+
+    &__cat-label,
+    &__date label {
+      font-size: 0.8rem;
+    }
+
+    &__cat-trigger {
+      padding: 9px 12px;
+      font-size: 16px;
+      min-height: 44px;
+    }
+
+    &__chip {
+      padding: 8px 12px;
+      min-height: 36px;
+    }
+
+    &__date input {
+      font-size: 16px;
+      padding: 9px 12px;
+    }
+
+    &__submit {
+      align-self: stretch;
+      width: 100%;
+      padding: 11px 16px;
+      font-size: 0.9rem;
+      min-height: 44px;
+    }
+  }
+
+  // -------- Modal → bottom sheet --------
+  .pModal-overlay {
+    align-items: flex-end;
+    padding: 0;
+  }
+
+  .pModal {
+    width: 100%;
+    max-width: 100%;
+    max-height: 92vh;
+    margin: 0;
+    border-radius: 18px 18px 0 0;
+
+    &__head {
+      position: sticky;
+      top: 0;
+      z-index: 1;
+      background: var(--bg-card);
+      padding: 16px 16px 12px;
+    }
+
+    &__close {
+      width: 40px;
+      height: 40px;
+    }
+
+    &__body {
+      padding: 6px 16px 16px;
+
+      input,
+      select,
+      textarea {
+        font-size: 16px;
+      }
+    }
+  }
+
+  // -------- Report --------
+  .pReport {
+    gap: 16px;
+
+    &__hero {
+      padding: 18px 16px;
+    }
+    &__hero-amount {
+      font-size: 1.85rem;
+    }
+    &__hero-cur {
+      font-size: 1.1rem;
+    }
+
+    &__tiles {
+      gap: 10px;
+    }
+    &__tile {
+      padding: 12px;
+    }
+
+    &__breakdown {
+      padding: 16px;
+    }
+
+    // Keep the name column from squeezing the bar on narrow screens.
+    &__bar-row {
+      grid-template-columns: minmax(70px, 0.8fr) minmax(0, 1.5fr) auto;
+      gap: 8px;
+    }
+  }
+
+  // -------- List --------
+  .pList {
+    &__filters {
+      gap: 8px;
+    }
+
+    &__search {
+      flex: 1 1 100%;
+
+      input {
+        font-size: 16px;
+        padding: 9px 0;
+      }
+      button {
+        width: 28px;
+        height: 28px;
+      }
+    }
+
+    &__src-tabs {
+      flex: 1 1 100%;
+      justify-content: center;
+    }
+    &__src-tab {
+      flex: 1;
+      padding: 9px 14px;
+      min-height: 36px;
+      text-align: center;
+    }
+
+    &__item {
+      padding: 12px;
+      gap: 10px;
+    }
+
+    &__actions button {
+      width: 40px;
+      height: 40px;
+      font-size: 0.85rem;
+    }
+
+    &__confirm button {
+      padding: 9px 12px;
+      min-height: 40px;
+      font-size: 0.8rem;
+    }
+  }
+}

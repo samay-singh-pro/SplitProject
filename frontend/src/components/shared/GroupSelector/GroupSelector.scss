@@ -59,6 +59,14 @@ $brand-soft: rgba(110, 26, 110, 0.08);
       box-shadow: 0 0 0 3px $brand-soft;
     }
 
+    @media (max-width: 640px) {
+      // Let the pill fill the row so the 16px input never overflows
+      // the head when it wraps below the label.
+      flex: 1 1 100%;
+      min-width: 0;
+      max-width: 100%;
+    }
+
     > svg {
       color: var(--text-tertiary);
       font-size: 0.8rem;
@@ -80,6 +88,18 @@ $brand-soft: rgba(110, 26, 110, 0.08);
       &::placeholder {
         color: var(--text-tertiary);
       }
+
+      @media (max-width: 640px) {
+        font-size: 16px;
+        padding: 9px 0;
+        min-width: 0;
+      }
+
+      &::placeholder {
+        @media (max-width: 640px) {
+          font-size: 14px;
+        }
+      }
     }
 
     button {
@@ -94,6 +114,12 @@ $brand-soft: rgba(110, 26, 110, 0.08);
       justify-content: center;
       cursor: pointer;
       font-size: 0.65rem;
+
+      @media (max-width: 640px) {
+        width: 28px;
+        height: 28px;
+        flex-shrink: 0;
+      }
     }
   }
 
@@ -143,6 +169,13 @@ $brand-soft: rgba(110, 26, 110, 0.08);
       border-color: var(--brand-primary);
       box-shadow: 0 0 0 2px $brand-soft;
     }
+
+    @media (max-width: 640px) {
+      // Keep chips comfortably tappable and never wider than the
+      // viewport on the horizontal rail.
+      min-height: 44px;
+      max-width: calc(100vw - 48px);
+    }
   }
 
   &__avatar {
@@ -182,6 +215,10 @@ $brand-soft: rgba(110, 26, 110, 0.08);
     text-overflow: ellipsis;
     white-space: nowrap;
     max-width: 180px;
+
+    @media (max-width: 640px) {
+      max-width: 150px;
+    }
   }
 
   &__sub {

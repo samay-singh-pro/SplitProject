@@ -1,38 +1,92 @@
 // ---------- Side navigation ----------
-// Desktop: left sidebar card.
-// Mobile / tablet (<=850px): fixed bottom tab bar — always visible,
-// no scrolling needed to reach navigation, native-app feel.
+// Desktop: left sidebar card that MORPHS in place between two modes —
+//   • nav mode     → brand + nav items + identity card
+//   • account mode → back header + full account/preferences panel
+// The two views are stacked and cross-fade/slide so there's no pop-up
+// or overlay; the rail itself transforms.
+// Mobile / tablet (<=850px): fixed bottom tab bar (account lives in the
+// Navbar popover there, so the morph is disabled).
 
 $brand-soft: rgba(110, 26, 110, 0.08);
 
 .sideNav {
-  // Full-height rail. Sticky so it pins to the top of the viewport
-  // once the user scrolls past the navbar — keeps navigation always
-  // visible without the orphaned-card look.
+  // Full-height rail. Sticky so it pins to the top of the viewport once
+  // the user scrolls past the navbar. `position: sticky` is also the
+  // containing block for the two absolutely-stacked views below.
   position: sticky;
   top: 0;
   align-self: stretch;
   height: 100vh;
   width: 240px;
-  padding: 20px 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
+  flex-shrink: 0;
   background: var(--bg-card);
   border-right: 1px solid var(--border-color);
-  flex-shrink: 0;
+  // Clip the morphing views as they slide in/out.
+  overflow: hidden;
 
   // Slightly tighter rail on smaller laptops / tablets.
   @media (max-width: 1100px) and (min-width: 851px) {
     width: 210px;
-    padding: 18px 10px;
+  }
+
+  // -------- Morphing views (nav <-> account) --------
+  &__view {
+    position: absolute;
+    inset: 0;
+    padding: 20px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    transition: transform 0.34s cubic-bezier(0.22, 1, 0.36, 1),
+      opacity 0.24s ease, visibility 0s linear 0.34s;
+
+    @media (max-width: 1100px) and (min-width: 851px) {
+      padding: 18px 10px;
+    }
+  }
+
+  // Nav visible by default; account waits off to the right.
+  &__view--nav {
+    transform: translateX(0);
+    opacity: 1;
+    visibility: visible;
+    transition: transform 0.34s cubic-bezier(0.22, 1, 0.36, 1),
+      opacity 0.24s ease, visibility 0s;
+  }
+
+  &__view--account {
+    transform: translateX(28px);
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+  }
+
+  // Account mode: swap which view is live.
+  &--account &__view--nav {
+    transform: translateX(-28px);
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+  }
+
+  &--account &__view--account {
+    transform: translateX(0);
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transition: transform 0.34s cubic-bezier(0.22, 1, 0.36, 1),
+      opacity 0.24s ease 0.04s, visibility 0s;
   }
 
   &__brand {
-    padding: 4px 12px 0;
+    padding: 4px 12px 8px;
     display: flex;
     align-items: center;
     gap: 8px;
+
+    .brandMark {
+      font-size: 1.4rem;
+    }
   }
 
   &__label {
@@ -131,6 +185,161 @@ $brand-soft: rgba(110, 26, 110, 0.08);
     background: var(--brand-primary);
   }
 
+  // ---------- Identity card (nav mode footer → opens account) ----------
+  &__profile {
+    margin-top: auto;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 10px 8px;
+    border: 1px solid transparent;
+    border-radius: 12px;
+    background: transparent;
+    color: inherit;
+    font-family: inherit;
+    cursor: pointer;
+    text-align: left;
+    border-top: 1px solid var(--border-color);
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+    transition: background 0.15s ease, border-color 0.15s ease;
+
+    &:hover {
+      background: var(--bg-secondary);
+
+      .sideNav__profile-chevron {
+        transform: translateX(2px);
+        color: var(--brand-primary);
+      }
+    }
+  }
+
+  &__profile-avatar {
+    position: relative;
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    background: linear-gradient(
+      135deg,
+      var(--brand-primary),
+      var(--brand-secondary)
+    );
+    color: white;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.82rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+  }
+
+  // Pending-invite indicator on the avatar.
+  &__profile-dot {
+    position: absolute;
+    top: -1px;
+    right: -1px;
+    width: 11px;
+    height: 11px;
+    border-radius: 50%;
+    background: var(--brand-primary);
+    box-shadow: 0 0 0 2px var(--bg-card);
+  }
+
+  &__profile-who {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    flex: 1;
+    line-height: 1.15;
+
+    strong {
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    small {
+      font-size: 0.74rem;
+      color: var(--text-tertiary);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      margin-top: 1px;
+    }
+  }
+
+  &__profile-chevron {
+    font-size: 0.72rem;
+    color: var(--text-tertiary);
+    flex-shrink: 0;
+    transition: transform 0.18s ease, color 0.18s ease;
+  }
+
+  // ---------- Account mode ----------
+  &__accountHead {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 2px 4px 10px;
+    border-bottom: 1px solid var(--border-light);
+    flex-shrink: 0;
+  }
+
+  &__back {
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    border: 1px solid var(--border-color);
+    background: transparent;
+    color: var(--text-secondary);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.82rem;
+    flex-shrink: 0;
+    transition: border-color 0.15s ease, color 0.15s ease,
+      background 0.15s ease, transform 0.15s ease;
+
+    &:hover {
+      border-color: var(--brand-primary);
+      color: var(--brand-primary);
+      background: $brand-soft;
+      transform: translateX(-2px);
+    }
+  }
+
+  &__accountTitle {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    letter-spacing: -0.01em;
+  }
+
+  &__accountBody {
+    flex: 1;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    margin: 0 -4px;
+    padding: 8px 4px 12px;
+
+    scrollbar-width: thin;
+    scrollbar-color: var(--border-color) transparent;
+
+    &::-webkit-scrollbar {
+      width: 5px;
+    }
+    &::-webkit-scrollbar-thumb {
+      background: var(--border-color);
+      border-radius: 3px;
+    }
+  }
+
   // Show long labels by default; mobile overrides.
   &__text--long {
     flex: 1;
@@ -164,9 +373,29 @@ $brand-soft: rgba(110, 26, 110, 0.08);
     backdrop-filter: blur(10px);
     box-shadow: 0 -6px 20px rgba(0, 0, 0, 0.06);
     z-index: 95;
+    overflow: visible;
+    display: flex;
 
-    // The "Menu" header label is desktop-only.
-    &__brand {
+    // The morph is desktop-only. Flatten the nav view so its children
+    // (the list) become the bottom bar; drop the account view entirely.
+    &__view {
+      position: static;
+      padding: 0;
+      gap: 0;
+      transition: none;
+
+      &--nav {
+        display: contents;
+      }
+
+      &--account {
+        display: none;
+      }
+    }
+
+    // Brand + identity card are desktop-only.
+    &__brand,
+    &__profile {
       display: none;
     }
 
@@ -175,6 +404,7 @@ $brand-soft: rgba(110, 26, 110, 0.08);
       flex: 1;
       gap: 2px;
       width: 100%;
+      overflow: visible;
     }
 
     &__item {

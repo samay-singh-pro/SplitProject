@@ -5,6 +5,9 @@
 
 /* Light Theme (Default) */
 :root[data-theme='light'] {
+  /* Make native controls (date/time pickers + their calendar icon,
+     scrollbars, selects) follow the app theme. */
+  color-scheme: light;
   --bg-primary: #ffffff;
   --bg-secondary: #f8f9fa;
   --bg-card: #ffffff;
@@ -22,13 +25,21 @@
   --accent-green: #55c155;
   --accent-pink: #c04bc0;
   --accent-red: #fa5e5e;
-  
+
+  /* Brand-aware danger / error color — rose with a faint purple
+     undertone so it sits comfortably alongside the brand purples
+     instead of feeling like a stock-Bootstrap red. */
+  --accent-danger: #c41a5a;
+  --accent-danger-soft: rgba(196, 26, 90, 0.1);
+  --accent-danger-soft-strong: rgba(196, 26, 90, 0.16);
+  --accent-danger-ring: rgba(196, 26, 90, 0.28);
+
   --border-color: #e0e0e0;
   --border-light: #f0f0f0;
   --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1);
   --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
   --shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.15);
-  
+
   --input-bg: #ffffff;
   --input-border: #d0d0d0;
   --input-focus: #6e1a6e;
@@ -36,6 +47,7 @@
 
 /* Dark Theme */
 :root[data-theme='dark'] {
+  color-scheme: dark;
   --bg-primary: #0f0f14;
   --bg-secondary: #1a1a24;
   --bg-card: #1e1e2e;
@@ -53,7 +65,13 @@
   --accent-green: #6ed46e;
   --accent-pink: #d066d0;
   --accent-red: #ff7676;
-  
+
+  /* Dark-mode danger — lifted pink-rose for AA contrast on dark bg. */
+  --accent-danger: #ee4d83;
+  --accent-danger-soft: rgba(238, 77, 131, 0.16);
+  --accent-danger-soft-strong: rgba(238, 77, 131, 0.24);
+  --accent-danger-ring: rgba(238, 77, 131, 0.34);
+
   --border-color: #2e2e3e;
   --border-light: #252535;
   --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
@@ -65,12 +83,24 @@
   --input-focus: #b366b3;
 }
 
+/* No body zoom — it was shrinking `100vh`-sized elements (like the
+   full-height sidebar) to 90% visually, leaving a gap at the bottom
+   on PC. Components own their own density. */
 body {
-  zoom: 0.9;
   font-family: 'Poppins', sans-serif;
   background-color: var(--bg-primary);
   color: var(--text-primary);
   transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Phone-only backstop against accidental horizontal scroll. Scoped to
+   mobile so it can't affect the desktop sticky sidebar (which is a fixed
+   bottom bar on phones, not sticky). */
+@media (max-width: 640px) {
+  html,
+  body {
+    overflow-x: hidden;
+  }
 }
 
 /* Global transitions for theme switching */
@@ -78,4 +108,83 @@ body {
 *::before,
 *::after {
   transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+/* ---------- Shared brand wordmark ----------
+   Used in Navbar, SideNav, auth pages, and onboarding. Single source
+   of truth so the brand never drifts between screens. */
+.brandMark {
+  font-family: 'Poppins', sans-serif;
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  background: linear-gradient(135deg, var(--brand-primary), var(--brand-secondary));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  display: inline-block;
+  line-height: 1;
+}
+
+.brandMark--lg {
+  font-size: clamp(2.6rem, 9vw, 3.4rem);
+  font-weight: 900;
+  letter-spacing: -0.04em;
+}
+
+.brandMark--xl {
+  font-size: clamp(3rem, 11vw, 4rem);
+  font-weight: 900;
+  letter-spacing: -0.04em;
+}
+
+/* The dotted orbit rings used around the large brand mark on
+   onboarding and auth brand pane. Wrap the brandMark in a
+   .brandMark-orbit to enable. */
+.brandMark-orbit {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 60px;
+}
+
+.brandMark-orbit::before,
+.brandMark-orbit::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  border-radius: 50%;
+  border: 1px dashed rgba(255, 255, 255, 0.4);
+  pointer-events: none;
+  transform-origin: center center;
+}
+
+.brandMark-orbit::before {
+  width: 180px;
+  height: 180px;
+  margin-top: -90px;
+  margin-left: -90px;
+  animation: bm-spin 14s linear infinite;
+}
+
+.brandMark-orbit::after {
+  width: 280px;
+  height: 280px;
+  margin-top: -140px;
+  margin-left: -140px;
+  border-color: rgba(255, 255, 255, 0.22);
+  animation: bm-spin 24s linear infinite reverse;
+}
+
+.brandMark-orbit--dark::before {
+  border-color: rgba(110, 26, 110, 0.3);
+}
+.brandMark-orbit--dark::after {
+  border-color: rgba(192, 75, 192, 0.18);
+}
+
+@keyframes bm-spin {
+  to {
+    transform: rotate(360deg);
+  }
 }

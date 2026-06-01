@@ -29,7 +29,7 @@ const formatDate = (iso) => {
   });
 };
 
-const ExpenseCard = ({ expense, onEdit, onDelete }) => {
+const ExpenseCard = ({ expense, onEdit, onDelete, symbol = "₹" }) => {
   const [open, setOpen] = useState(false);
 
   const {
@@ -82,38 +82,43 @@ const ExpenseCard = ({ expense, onEdit, onDelete }) => {
         </div>
 
         <div className="expCard__amount">
-          ₹{formatMoney(amount)}
+          {symbol}{formatMoney(amount)}
         </div>
 
         <div className="expCard__icons">
-          {onEdit && (
-            <button
-              type="button"
-              className="expCard__icon-btn"
-              onClick={(e) => {
-                e.stopPropagation();
-                onEdit(expense);
-              }}
-              title="Edit expense"
-              aria-label="Edit expense"
-            >
-              <FaPen />
-            </button>
-          )}
-          {onDelete && (
-            <button
-              type="button"
-              className="expCard__icon-btn expCard__icon-btn--danger"
-              onClick={(e) => {
-                e.stopPropagation();
-                onDelete(expense);
-              }}
-              title="Delete expense"
-              aria-label="Delete expense"
-            >
-              <FaTrash />
-            </button>
-          )}
+          <span className="expCard__amount-mobile">
+            {symbol}{formatMoney(amount)}
+          </span>
+          <div className="expCard__actions">
+            {onEdit && (
+              <button
+                type="button"
+                className="expCard__icon-btn"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onEdit(expense);
+                }}
+                title="Edit expense"
+                aria-label="Edit expense"
+              >
+                <FaPen />
+              </button>
+            )}
+            {onDelete && (
+              <button
+                type="button"
+                className="expCard__icon-btn expCard__icon-btn--danger"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete(expense);
+                }}
+                title="Delete expense"
+                aria-label="Delete expense"
+              >
+                <FaTrash />
+              </button>
+            )}
+          </div>
         </div>
 
         <span className="expCard__chevron" aria-hidden>
@@ -134,7 +139,13 @@ const ExpenseCard = ({ expense, onEdit, onDelete }) => {
                     {initials(m.memberName)}
                   </span>
                   <span className="expCard__split-name">{m.memberName}</span>
-                  <strong>₹{formatMoney(m.amount)}</strong>
+                  <strong>
+                    {m.percentage !== undefined ? (
+                      `${m.percentage}%`
+                    ) : (
+                      `${symbol}${formatMoney(m.amount)}`
+                    )}
+                  </strong>
                 </li>
               ))}
             </ul>

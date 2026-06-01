@@ -45,6 +45,10 @@ $brand-soft: rgba(110, 26, 110, 0.08);
     display: flex;
     align-items: center;
     justify-content: center;
+
+    @media (max-width: 640px) {
+      height: 110px;
+    }
   }
 
   &__cover img {
@@ -80,7 +84,12 @@ $brand-soft: rgba(110, 26, 110, 0.08);
     padding: 14px 16px 16px;
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 6px;
+
+    @media (max-width: 640px) {
+      padding: 14px 14px 16px;
+      gap: 6px;
+    }
   }
 
   &__title {
@@ -92,6 +101,10 @@ $brand-soft: rgba(110, 26, 110, 0.08);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+
+    @media (max-width: 640px) {
+      font-size: 0.98rem;
+    }
   }
 
   &__desc {
@@ -104,6 +117,12 @@ $brand-soft: rgba(110, 26, 110, 0.08);
     -webkit-box-orient: vertical;
     overflow: hidden;
     min-height: 2.5em;
+
+    @media (max-width: 640px) {
+      font-size: 0.82rem;
+      -webkit-line-clamp: 1;
+      min-height: 0;
+    }
   }
 
   &__footer {
@@ -162,6 +181,18 @@ $brand-soft: rgba(110, 26, 110, 0.08);
     svg {
       font-size: 0.65rem;
       transition: transform 0.2s ease;
+    }
+
+    // 2-col grid on phones leaves no horizontal room for "View
+    // insights" text. Show only the arrow — the entire card is a
+    // single click target anyway.
+    @media (max-width: 640px) {
+      gap: 0;
+      font-size: 0;
+
+      svg {
+        font-size: 0.78rem;
+      }
     }
   }
 }

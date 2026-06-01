@@ -4,7 +4,7 @@
 // because DashboardLayout always imports NewGroup.
 
 $brand-soft: rgba(110, 26, 110, 0.08);
-$danger: #ef4444;
+$danger: var(--accent-danger);
 $success: #16a34a;
 
 .addSplit {
@@ -42,13 +42,16 @@ $success: #16a34a;
     margin: 0 auto 20px;
 
     @media (max-width: 640px) {
-      margin-bottom: 14px;
+      margin-bottom: 12px;
 
       .addSplit__crumbs {
         display: none;
       }
       .addSplit__subtitle {
         display: none;
+      }
+      .addSplit__title {
+        font-size: 1.35rem;
       }
     }
   }
@@ -94,20 +97,29 @@ $success: #16a34a;
     margin: 0 auto 24px;
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    align-items: flex-start;
+    gap: 14px;
+
+    @media (max-width: 640px) {
+      max-width: 100%;
+      margin-bottom: 16px;
+      gap: 12px;
+    }
   }
 
   // ---------- Layout ----------
+  // Two-column on desktop (form + sticky summary). On tablet/mobile
+  // the summary aside hides entirely so the form takes the full width.
   &__layout {
+    // Match the page chrome (topbar + group selector row) and the other
+    // group-scoped screens (Expense list, Reports) so the group selector
+    // — including its "no groups yet" empty card — lines up flush with
+    // the form card below it. One content width app-wide.
     max-width: 1200px;
     margin: 0 auto;
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) 340px;
-    gap: 24px;
-    align-items: flex-start;
 
-    @media (max-width: 1024px) {
-      grid-template-columns: 1fr;
+    @media (max-width: 640px) {
+      max-width: 100%;
     }
   }
 
@@ -116,13 +128,48 @@ $success: #16a34a;
     border: 1px solid var(--border-color);
     border-radius: 18px;
     box-shadow: var(--shadow-sm);
+
+    @media (max-width: 640px) {
+      max-width: 100%;
+    }
   }
 
   &__form {
     padding: clamp(16px, 3vw, 32px);
     display: flex;
     flex-direction: column;
-    gap: clamp(20px, 3vw, 32px);
+    gap: clamp(20px, 3vw, 28px);
+
+    @media (max-width: 640px) {
+      padding: 16px;
+      gap: 16px;
+    }
+  }
+
+  // Web: two-column field grid so the whole expense form fits without
+  // scrolling. Left = what + who paid; right = split-with + how-to-split.
+  // Collapses to a single column below 1024px.
+  &__cols {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: clamp(24px, 3vw, 40px);
+    align-items: start;
+
+    @media (max-width: 1024px) {
+      grid-template-columns: 1fr;
+      gap: clamp(20px, 3vw, 28px);
+    }
+  }
+
+  &__col {
+    display: flex;
+    flex-direction: column;
+    gap: clamp(20px, 3vw, 28px);
+    min-width: 0;
+
+    @media (max-width: 640px) {
+      gap: 16px;
+    }
   }
 
   // ---------- Amount field ----------
@@ -150,9 +197,6 @@ $success: #16a34a;
 
     input {
       flex: 1;
-      border: none;
-      background: transparent;
-      padding: 14px 0;
       font-size: 1.4rem;
       font-weight: 600;
       color: var(--text-primary);
@@ -164,10 +208,6 @@ $success: #16a34a;
         font-weight: 400;
       }
 
-      &:focus {
-        outline: none;
-      }
-
       /* Hide native number spinners */
       -moz-appearance: textfield;
 
@@ -176,12 +216,49 @@ $success: #16a34a;
         -webkit-appearance: none;
         margin: 0;
       }
+
+      // 16px on mobile prevents iOS zoom-on-focus.
+      @media (max-width: 640px) {
+        font-size: 16px;
+      }
     }
+
+    @media (max-width: 640px) {
+      padding: 4px 12px;
+
+      > span {
+        font-size: 16px;
+      }
+    }
+  }
+
+  // Hard reset for the input inside the amount wrapper. The global
+  // `.ng-field input` rule paints its own border/background/box-shadow
+  // (focus ring), which renders as a SECOND nested field inside the
+  // wrapper's purple border. !important is the cleanest way to win
+  // against the `.ng-field input:focus` cascade without crawling the
+  // whole selector tree.
+  .ng-field &__amount-input input,
+  .ng-field &__amount-input input:hover,
+  .ng-field &__amount-input input:focus,
+  .ng-field &__amount-input input:focus-visible,
+  .ng-field &__amount-input input:active {
+    width: auto !important;
+    padding: 14px 0 !important;
+    background: transparent !important;
+    border: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    outline: none !important;
+    -webkit-appearance: none;
+    appearance: none;
+    -webkit-tap-highlight-color: transparent;
+    transition: none !important;
   }
 
   .ng-field--error &__amount-input {
     border-color: $danger;
-    background: rgba(239, 68, 68, 0.06);
+    background: var(--accent-danger-soft);
   }
 
   // ---------- Inferred category tag ----------
@@ -310,6 +387,11 @@ $success: #16a34a;
         color: var(--brand-primary);
         background: $brand-soft;
       }
+
+      @media (max-width: 640px) {
+        padding: 8px 14px;
+        min-height: 36px;
+      }
     }
   }
 
@@ -339,6 +421,12 @@ $success: #16a34a;
     &::-webkit-scrollbar-thumb {
       background: var(--border-color);
       border-radius: 3px;
+    }
+
+    @media (max-width: 640px) {
+      max-width: 100%;
+      max-height: 220px;
+      gap: 8px;
     }
   }
 
@@ -379,6 +467,18 @@ $success: #16a34a;
       &::placeholder {
         color: var(--text-tertiary);
       }
+
+      // 16px on mobile prevents iOS zoom-on-focus.
+      @media (max-width: 640px) {
+        font-size: 16px;
+        padding: 8px 0;
+      }
+
+      &::placeholder {
+        @media (max-width: 640px) {
+          font-size: 14px;
+        }
+      }
     }
 
     button {
@@ -393,6 +493,13 @@ $success: #16a34a;
       justify-content: center;
       cursor: pointer;
       font-size: 0.62rem;
+
+      // Larger tap target for the clear button on mobile.
+      @media (max-width: 640px) {
+        width: 28px;
+        height: 28px;
+        font-size: 0.7rem;
+      }
     }
   }
 
@@ -439,6 +546,12 @@ $success: #16a34a;
       background: $brand-soft;
       border-color: var(--brand-primary);
     }
+
+    // Keep the chip comfortably tappable on phones.
+    @media (max-width: 640px) {
+      padding: 7px 14px 7px 7px;
+      gap: 8px;
+    }
   }
 
   &__avatar {
@@ -458,6 +571,11 @@ $success: #16a34a;
       width: 24px;
       height: 24px;
       font-size: 0.62rem;
+    }
+
+    @media (max-width: 640px) {
+      width: 30px;
+      height: 30px;
     }
   }
 
@@ -487,14 +605,16 @@ $success: #16a34a;
   &__segmented {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 8px;
-    padding: 6px;
+    gap: 6px;
+    padding: 5px;
     background: var(--bg-secondary);
     border: 1px solid var(--border-color);
-    border-radius: 14px;
+    border-radius: 12px;
 
-    @media (max-width: 560px) {
-      grid-template-columns: 1fr;
+    @media (max-width: 640px) {
+      max-width: 100%;
+      gap: 4px;
+      padding: 4px;
     }
   }
 
@@ -503,7 +623,7 @@ $success: #16a34a;
     flex-direction: column;
     align-items: flex-start;
     gap: 4px;
-    padding: 12px 14px;
+    padding: 10px 12px;
     background: transparent;
     border: 1px solid transparent;
     border-radius: 10px;
@@ -523,28 +643,53 @@ $success: #16a34a;
       color: var(--brand-primary);
       box-shadow: 0 0 0 2px $brand-soft;
     }
+
+    // On phones: compact icon + label only, no sub. Stay as a 3-column
+    // tab bar so it doesn't sprawl down the form.
+    @media (max-width: 640px) {
+      flex-direction: row;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 6px;
+      justify-content: center;
+      min-height: 40px;
+    }
   }
 
   &__seg-icon {
-    width: 28px;
-    height: 28px;
+    width: 26px;
+    height: 26px;
     border-radius: 8px;
     background: $brand-soft;
     color: var(--brand-primary);
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    font-size: 0.82rem;
+    font-size: 0.78rem;
+
+    @media (max-width: 640px) {
+      width: 22px;
+      height: 22px;
+      font-size: 0.7rem;
+    }
   }
 
   &__seg-label {
-    font-size: 0.92rem;
+    font-size: 0.9rem;
     font-weight: 600;
+
+    @media (max-width: 640px) {
+      font-size: 0.78rem;
+    }
   }
 
   &__seg-sub {
     font-size: 0.74rem;
     color: var(--text-tertiary);
+
+    @media (max-width: 640px) {
+      display: none;
+    }
   }
 
   &__seg--active &__seg-sub {
@@ -561,12 +706,21 @@ $success: #16a34a;
     background: var(--bg-secondary);
     border: 1px solid var(--border-color);
     border-radius: 12px;
+
+    @media (max-width: 640px) {
+      max-width: 100%;
+      padding: 12px;
+    }
   }
 
   &__split-row {
     display: flex;
     align-items: center;
     gap: 10px;
+
+    @media (max-width: 640px) {
+      gap: 8px;
+    }
   }
 
   &__split-name {
@@ -621,6 +775,20 @@ $success: #16a34a;
         -webkit-appearance: none;
         margin: 0;
       }
+
+      // 16px on mobile prevents iOS zoom-on-focus.
+      @media (max-width: 640px) {
+        font-size: 16px;
+      }
+    }
+
+    @media (max-width: 640px) {
+      width: 120px;
+      flex-shrink: 0;
+
+      > span {
+        font-size: 16px;
+      }
     }
   }
 
@@ -638,12 +806,14 @@ $success: #16a34a;
     }
 
     &--bad {
-      background: rgba(239, 68, 68, 0.1);
+      background: var(--accent-danger-soft);
       color: $danger;
     }
   }
 
-  // ---------- Summary aside ----------
+  // ---------- Summary aside (desktop only) ----------
+  // Hidden on mobile/tablet — the form fills the screen there. On
+  // desktop it sticks alongside the form for a live recap.
   &__summary {
     padding: 22px;
     position: sticky;
@@ -652,23 +822,8 @@ $success: #16a34a;
     flex-direction: column;
     gap: 18px;
 
-    // On tablet/mobile, put the summary BELOW the form (not above) so
-    // users see the friendly amount/desc fields first, then a compact
-    // summary recap at the bottom.
     @media (max-width: 1024px) {
-      position: static;
-      order: 1;
-      padding: 16px;
-      gap: 12px;
-    }
-
-    @media (max-width: 640px) {
-      .addSplit__summary-amount {
-        padding: 12px 14px;
-      }
-      .addSplit__summary-value {
-        font-size: 1.6rem;
-      }
+      display: none;
     }
   }
 
@@ -783,3 +938,4 @@ $success: #16a34a;
     }
   }
 }
+

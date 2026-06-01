@@ -7,6 +7,8 @@ import errorHandler from "./middlewares/errorMiddleware.js";
 import authRoutes from "./routes/authRoutes.js";
 import groupRoutes from "./routes/groupRoutes.js";
 import expenseRoute from "./routes/expenseRoutes.js";
+import inviteRoutes from "./routes/inviteRoutes.js";
+import personalRoutes from "./routes/personalRoutes.js";
 
 const app = express();
 
@@ -30,6 +32,8 @@ app.use(express.urlencoded({ extended: true }));
 app.use("/api/v1/user", authRoutes);
 app.use("/api/v1/group", groupRoutes);
 app.use("/api/v1/expense", expenseRoute);
+app.use("/api/v1/invite", inviteRoutes);
+app.use("/api/v1/personal", personalRoutes);
 
 connection();
 app.use(errorHandler);

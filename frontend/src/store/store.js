@@ -4,6 +4,8 @@ import loginReducer from "./loginSlice";
 import groupReducer from "./groupSlice";
 import expenseReducer from "./expenseSlice";
 import statsReducer from "./statsSlice";
+import inviteReducer from "./inviteSlice";
+import personalReducer from "./personalSlice";
 
 const store = configureStore({
   reducer: {
@@ -12,6 +14,8 @@ const store = configureStore({
     group: groupReducer,
     expense: expenseReducer,
     stats: statsReducer,
+    invite: inviteReducer,
+    personal: personalReducer,
   },
 });
 export default store;

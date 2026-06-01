@@ -65,6 +65,83 @@ const computeSharesCents = (expense) => {
   }));
 };
 
+// Strip every directed cycle from a debt graph (keys "from|to" -> cents,
+// all positive). A cycle is a *circulation*: going around it adds the same
+// amount to each member's incoming and outgoing debt, so cancelling it
+// leaves every member's net position (out − in) untouched while removing
+// flow that nobody actually owes. The result is acyclic, which means it is
+// empty *exactly* when every net balance is zero. This is what keeps the
+// pairwise view consistent with the net balances even after settlements are
+// paid across pairs that never shared an expense (e.g. following the
+// simplified plan) — those payments are what introduce the cycles.
+//
+// N is the member count (small), so a plain repeated-DFS cancellation is
+// more than fast enough and stays exact (integer cents throughout).
+const cancelCirculations = (debt) => {
+  const liveEdges = () =>
+    Object.keys(debt)
+      .filter((k) => debt[k] > 0)
+      .sort();
+
+  const nodesOf = () => {
+    const s = new Set();
+    for (const k of liveEdges()) {
+      const [a, b] = k.split("|");
+      s.add(a);
+      s.add(b);
+    }
+    return [...s].sort();
+  };
+
+  const outNeighbors = (u) =>
+    liveEdges()
+      .filter((k) => k.startsWith(`${u}|`))
+      .map((k) => k.slice(u.length + 1));
+
+  // DFS for one directed cycle; returns its node sequence [v, …, u] (edge
+  // u->v closes it) or null. Sorted traversal keeps the output stable.
+  const findCycle = () => {
+    const state = {}; // 1 = on current path, 2 = fully explored
+    let cycle = null;
+
+    const visit = (u, path) => {
+      if (cycle) return;
+      state[u] = 1;
+      path.push(u);
+      for (const v of outNeighbors(u)) {
+        if (cycle) break;
+        if (state[v] === 1) {
+          cycle = path.slice(path.indexOf(v));
+          return;
+        }
+        if (state[v] !== 2) visit(v, path);
+      }
+      state[u] = 2;
+      path.pop();
+    };
+
+    for (const n of nodesOf()) {
+      if (cycle) break;
+      if (state[n] !== 2) visit(n, []);
+    }
+    return cycle;
+  };
+
+  let cycle;
+  while ((cycle = findCycle())) {
+    const edge = (i) => `${cycle[i]}|${cycle[(i + 1) % cycle.length]}`;
+    let bottleneck = Infinity;
+    for (let i = 0; i < cycle.length; i++) {
+      bottleneck = Math.min(bottleneck, debt[edge(i)]);
+    }
+    for (let i = 0; i < cycle.length; i++) {
+      const key = edge(i);
+      debt[key] -= bottleneck;
+      if (debt[key] <= 0) delete debt[key];
+    }
+  }
+};
+
 // Direct (pair-wise) debt graph: who owes whom based on the actual
 // expense history. Mutual debts within a pair are netted out (if A owes
 // B 100 and B owes A 30, the result is A owes B 70). Crucially, debts
@@ -114,20 +191,18 @@ const computeDirectDebtsCents = (expenses, settlementExpenses) => {
     settle(payerKey, beneficiaryKey, toCents(expense.amount));
   });
 
-  // Net out mutual debts within each unordered pair.
-  const out = [];
-  const seen = new Set();
-  for (const key of Object.keys(debt)) {
-    const [a, b] = key.split("|");
-    const pairKey = [a, b].sort().join("|");
-    if (seen.has(pairKey)) continue;
-    seen.add(pairKey);
+  // Remove every circulation. This subsumes the old "net mutual debts in a
+  // pair" step (a mutual A↔B debt is just a 2-cycle) and also dissolves the
+  // longer cycles that cross-pair settlements create, so each unordered pair
+  // is left with at most one direction and the totals match the net
+  // balances exactly. (Empty graph ⟺ everyone is settled.)
+  cancelCirculations(debt);
 
-    const forward = debt[`${a}|${b}`] || 0;
-    const reverse = debt[`${b}|${a}`] || 0;
-    const net = forward - reverse;
-    if (net > 0) out.push({ fromId: a, toId: b, cents: net });
-    else if (net < 0) out.push({ fromId: b, toId: a, cents: -net });
+  const out = [];
+  for (const key of Object.keys(debt)) {
+    if (debt[key] <= 0) continue;
+    const [a, b] = key.split("|");
+    out.push({ fromId: a, toId: b, cents: debt[key] });
   }
 
   // Stable sort for deterministic output.

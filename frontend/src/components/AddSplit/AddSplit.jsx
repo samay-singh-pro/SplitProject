@@ -5,6 +5,11 @@ import { fetchGroups } from "../../store/groupSlice";
 import { addExpense } from "../../store/expenseSlice";
 import GroupSelector from "../shared/GroupSelector/GroupSelector";
 import { useCurrentGroup } from "../../hooks/useCurrentGroup";
+import { useScope } from "../../hooks/useScope";
+import ScopeToggle from "../shared/ScopeToggle/ScopeToggle";
+import PersonalExpenseForm from "../Personal/PersonalExpenseForm";
+import { getCurrencySymbol } from "../../utils/currency";
+import { toLocalInput } from "../../utils/datetime";
 import {
   FaArrowRight,
   FaUsers,
@@ -19,6 +24,7 @@ import {
   FaChevronDown,
   FaSearch,
   FaTimes,
+  FaRegClock,
 } from "react-icons/fa";
 
 // Above this count, the member pickers show a search box + scrollable cap
@@ -71,6 +77,8 @@ const formatMoney = (n) =>
 const AddSplit = () => {
   const dispatch = useDispatch();
   const { groups } = useSelector((state) => state.group);
+  const { userInfo } = useSelector((state) => state.login);
+  const [scope, setScope] = useScope();
 
   const [selectedGroup, setSelectedGroup] = useCurrentGroup();
   const [amount, setAmount] = useState("");
@@ -86,6 +94,10 @@ const AddSplit = () => {
   const [errors, setErrors] = useState({});
   const [paidSearch, setPaidSearch] = useState("");
   const [splitSearch, setSplitSearch] = useState("");
+  // Date + time of the expense, defaulted to now (lets users log a
+  // past expense). Sent to the server which stores it as the record's
+  // timestamp.
+  const [date, setDate] = useState(toLocalInput());
 
   const handleDescriptionChange = (val) => {
     setDescription(val);
@@ -102,6 +114,8 @@ const AddSplit = () => {
   }, [dispatch]);
 
   const group = groups.find((g) => g._id === selectedGroup);
+  // Amounts use the GROUP's currency, not the viewer's personal one.
+  const symbol = getCurrencySymbol(group?.currency);
   // Active members only — removed members can't take part in new expenses.
   const members = (group?.members || []).filter((m) => !m.removed);
   const amountNum = parseFloat(amount) || 0;
@@ -161,22 +175,6 @@ const AddSplit = () => {
     [splitAmong, percentageSplits]
   );
 
-  const equalShare =
-    splitType === "equally" && splitAmong.length > 0
-      ? amountNum / splitAmong.length
-      : 0;
-
-  const shareFor = (memberId) => {
-    if (splitType === "equally") return equalShare;
-    if (splitType === "unequally")
-      return parseFloat(unequalSplits[memberId]) || 0;
-    if (splitType === "percentage") {
-      const pct = parseFloat(percentageSplits[memberId]) || 0;
-      return (amountNum * pct) / 100;
-    }
-    return 0;
-  };
-
   const validate = () => {
     const next = {};
     if (!selectedGroup) next.group = "Pick a group first.";
@@ -215,6 +213,7 @@ const AddSplit = () => {
       category,
       spenderId: spender,
       splitType,
+      date,
       splitDetails: [],
     };
 
@@ -233,18 +232,28 @@ const AddSplit = () => {
     }
 
     dispatch(addExpense(expenseData)).then(() => {
-      setAmount("");
-      setDescription("");
-      setSpender("");
-      setCategory("Others");
-      setCategoryAuto(true);
-      setShowCategoryPicker(false);
-      setSplitAmong([]);
-      setUnequalSplits({});
-      setPercentageSplits({});
-      setSplitType("equally");
-      setErrors({});
+      resetForm();
     });
+  };
+
+  // Wipe all fields back to their initial state. Used both after a
+  // successful save and from the explicit "Reset" button in the
+  // form actions.
+  const resetForm = () => {
+    setAmount("");
+    setDescription("");
+    setSpender("");
+    setCategory("Others");
+    setCategoryAuto(true);
+    setShowCategoryPicker(false);
+    setSplitAmong([]);
+    setUnequalSplits({});
+    setPercentageSplits({});
+    setSplitType("equally");
+    setPaidSearch("");
+    setSplitSearch("");
+    setDate(toLocalInput());
+    setErrors({});
   };
 
   return (
@@ -259,19 +268,26 @@ const AddSplit = () => {
           <FaArrowRight />
           <span className="active">Add split</span>
         </div>
-        <h1 className="addSplit__title">Add an expense</h1>
+        <h1 className="addSplit__title">
+          {scope === "personal" ? "Add a personal expense" : "Add an expense"}
+        </h1>
         <p className="addSplit__subtitle">
-          Track what was spent and how it should be split.
+          {scope === "personal"
+            ? "Just for you — no group, no splitting."
+            : "Track what was spent and how it should be split."}
         </p>
       </header>
 
       <div className="addSplit__group-row">
-        <GroupSelector
-          groups={groups}
-          selectedId={selectedGroup}
-          onSelect={handleGroupChange}
-        />
-        {errors.group && (
+        <ScopeToggle scope={scope} onChange={setScope} />
+        {scope === "group" && (
+          <GroupSelector
+            groups={groups}
+            selectedId={selectedGroup}
+            onSelect={handleGroupChange}
+          />
+        )}
+        {scope === "group" && errors.group && (
           <span className="ng-field__error ng-field__error--block">
             <FaExclamationCircle />
             {errors.group}
@@ -279,12 +295,23 @@ const AddSplit = () => {
         )}
       </div>
 
+      {scope === "personal" ? (
+        <div className="addSplit__layout">
+          <div className="addSplit__card addSplit__form">
+            <PersonalExpenseForm
+              symbol={getCurrencySymbol(userInfo?.currency)}
+            />
+          </div>
+        </div>
+      ) : (
       <div className="addSplit__layout">
         <form
           className="addSplit__card addSplit__form"
           onSubmit={handleSubmit}
           noValidate
         >
+          <div className="addSplit__cols">
+            <div className="addSplit__col">
           {/* ----- What ----- */}
           <section className="ng-section">
             <div className="ng-section__head">
@@ -303,7 +330,7 @@ const AddSplit = () => {
                 <FaCoins /> Amount<span className="ng-required">*</span>
               </label>
               <div className="addSplit__amount-input">
-                <span>₹</span>
+                <span>{symbol}</span>
                 <input
                   id="as-amount"
                   type="number"
@@ -387,6 +414,19 @@ const AddSplit = () => {
                 </div>
               )}
             </div>
+
+            <div className="ng-field addSplit__when">
+              <label htmlFor="as-date">
+                <FaRegClock /> Date &amp; time
+              </label>
+              <input
+                id="as-date"
+                type="datetime-local"
+                value={date}
+                max={toLocalInput()}
+                onChange={(e) => setDate(e.target.value)}
+              />
+            </div>
           </section>
 
           {/* ----- Who paid ----- */}
@@ -468,6 +508,8 @@ const AddSplit = () => {
               </>
             )}
           </section>
+            </div>
+            <div className="addSplit__col">
 
           {/* ----- Split among ----- */}
           <section className="ng-section">
@@ -600,7 +642,7 @@ const AddSplit = () => {
                       </span>
                       <span className="addSplit__split-name">{m?.name}</span>
                       <div className="addSplit__split-input">
-                        <span>₹</span>
+                        <span>{symbol}</span>
                         <input
                           type="number"
                           inputMode="decimal"
@@ -626,7 +668,7 @@ const AddSplit = () => {
                       : "addSplit__total--bad"
                   }`}
                 >
-                  Sum: ₹{formatMoney(unequalTotal)} of ₹{formatMoney(amountNum)}
+                  Sum: {symbol}{formatMoney(unequalTotal)} of {symbol}{formatMoney(amountNum)}
                 </div>
                 {errors.unequal && (
                   <span className="ng-field__error ng-field__error--block">
@@ -684,71 +726,24 @@ const AddSplit = () => {
               </div>
             )}
           </section>
+            </div>
+          </div>
 
           <div className="ng-actions">
+            <button
+              type="button"
+              className="ng-btn ng-btn--ghost"
+              onClick={resetForm}
+            >
+              Reset
+            </button>
             <button type="submit" className="ng-btn ng-btn--primary">
               <FaCheck /> Save expense
             </button>
           </div>
         </form>
-
-        {/* ---------- Sticky live summary ---------- */}
-        <aside className="addSplit__card addSplit__summary">
-          <div className="addSplit__summary-label">Summary</div>
-
-          <div className="addSplit__summary-amount">
-            <span className="addSplit__summary-currency">₹</span>
-            <span className="addSplit__summary-value">
-              {formatMoney(amountNum)}
-            </span>
-          </div>
-
-          <div className="addSplit__summary-meta">
-            <div className="addSplit__summary-row">
-              <span>Group</span>
-              <strong>{group?.name || "—"}</strong>
-            </div>
-            <div className="addSplit__summary-row">
-              <span>Paid by</span>
-              <strong>
-                {members.find((m) => m._id === spender)?.name || "—"}
-              </strong>
-            </div>
-            <div className="addSplit__summary-row">
-              <span>Category</span>
-              <strong>{category || "—"}</strong>
-            </div>
-            <div className="addSplit__summary-row">
-              <span>Split type</span>
-              <strong>
-                {SPLIT_TYPES.find((t) => t.key === splitType)?.label}
-              </strong>
-            </div>
-          </div>
-
-          {splitAmong.length > 0 && amountNum > 0 && (
-            <div className="addSplit__summary-shares">
-              <span className="addSplit__summary-shares-title">
-                Per-person share
-              </span>
-              <ul>
-                {splitAmong.map((id) => {
-                  const m = members.find((x) => x._id === id);
-                  return (
-                    <li key={id}>
-                      <span className="addSplit__avatar addSplit__avatar--sm">
-                        {initials(m?.name)}
-                      </span>
-                      <span>{m?.name}</span>
-                      <strong>₹{formatMoney(shareFor(id))}</strong>
-                    </li>
-                  );
-                })}
-              </ul>
-            </div>
-          )}
-        </aside>
       </div>
+      )}
     </div>
   );
 };

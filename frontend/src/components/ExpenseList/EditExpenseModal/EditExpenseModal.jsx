@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from "react";
+import { createPortal } from "react-dom";
 import { useDispatch } from "react-redux";
 import "./EditExpenseModal.scss";
 import {
@@ -21,6 +22,7 @@ import {
 } from "../../../utils/categoryInfer";
 import { updateExpense, getAllExpenses } from "../../../store/expenseSlice";
 import { fetchGroupStats } from "../../../store/statsSlice";
+import { getCurrencySymbol } from "../../../utils/currency";
 
 const initials = (value) => {
   if (!value) return "?";
@@ -47,6 +49,8 @@ const idOf = (v) => (v?._id || v)?.toString?.() || "";
 
 const EditExpenseModal = ({ open, onClose, expense, group }) => {
   const dispatch = useDispatch();
+  // Edits display in the group's currency, not the viewer's.
+  const symbol = getCurrencySymbol(group?.currency);
   const members = useMemo(
     () => (group?.members || []).filter((m) => !m.removed),
     [group]
@@ -164,9 +168,9 @@ const EditExpenseModal = ({ open, onClose, expense, group }) => {
 
     if (splitType === "unequally" && splitAmong.length > 0) {
       if (Math.abs(unequalTotal - amountNum) > 0.01) {
-        next.unequal = `Amounts add up to ₹${formatMoney(
+        next.unequal = `Amounts add up to ${symbol}${formatMoney(
           unequalTotal
-        )}, not ₹${formatMoney(amountNum)}.`;
+        )}, not ${symbol}${formatMoney(amountNum)}.`;
       }
     }
     if (splitType === "percentage" && splitAmong.length > 0) {
@@ -220,7 +224,7 @@ const EditExpenseModal = ({ open, onClose, expense, group }) => {
     });
   };
 
-  return (
+  return createPortal(
     <div className="editExpModal" role="dialog" onClick={onClose}>
       <form
         className="editExpModal__panel"
@@ -521,7 +525,7 @@ const EditExpenseModal = ({ open, onClose, expense, group }) => {
                           {m?.name}
                         </span>
                         <div className="editExpModal__split-input">
-                          {splitType === "unequally" && <span>₹</span>}
+                          {splitType === "unequally" && <span>{symbol}</span>}
                           <input
                             type="number"
                             inputMode="decimal"
@@ -574,7 +578,7 @@ const EditExpenseModal = ({ open, onClose, expense, group }) => {
                       : "editExpModal__total--bad"
                   }`}
                 >
-                  Sum ₹{formatMoney(unequalTotal)} / ₹{formatMoney(amountNum)}
+                  Sum {symbol}{formatMoney(unequalTotal)} / {symbol}{formatMoney(amountNum)}
                 </div>
               )}
 
@@ -623,7 +627,8 @@ const EditExpenseModal = ({ open, onClose, expense, group }) => {
           </button>
         </div>
       </form>
-    </div>
+    </div>,
+    document.body
   );
 };
 

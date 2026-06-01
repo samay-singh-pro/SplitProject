@@ -1,7 +1,7 @@
 // ---------- Edit group modal ----------
 
 $brand-soft: rgba(110, 26, 110, 0.08);
-$danger: #ef4444;
+$danger: var(--accent-danger);
 $warning: #f59e0b;
 
 .editGroup-overlay {
@@ -36,7 +36,10 @@ $warning: #f59e0b;
   animation: eg-pop 0.22s cubic-bezier(0.2, 0.8, 0.2, 1);
 
   @media (max-width: 640px) {
+    width: 100%;
+    max-width: 100%;
     max-height: 92vh;
+    margin: 0;
     border-radius: 18px 18px 0 0;
     border-bottom: none;
     animation: eg-slide 0.22s cubic-bezier(0.2, 0.8, 0.2, 1);
@@ -49,6 +52,14 @@ $warning: #f59e0b;
     gap: 10px;
     padding: 18px 18px 12px;
     border-bottom: 1px solid var(--border-light);
+
+    @media (max-width: 640px) {
+      position: sticky;
+      top: 0;
+      z-index: 2;
+      background: var(--bg-card);
+      padding: 16px 16px 12px;
+    }
 
     h3 {
       margin: 0;
@@ -77,6 +88,11 @@ $warning: #f59e0b;
     justify-content: center;
     cursor: pointer;
     font-size: 0.85rem;
+
+    @media (max-width: 640px) {
+      width: 40px;
+      height: 40px;
+    }
   }
 
   &__body {
@@ -86,6 +102,11 @@ $warning: #f59e0b;
     display: flex;
     flex-direction: column;
     gap: 22px;
+
+    @media (max-width: 640px) {
+      padding: 16px;
+      gap: 16px;
+    }
   }
 
   &__section {
@@ -117,6 +138,10 @@ $warning: #f59e0b;
       font-weight: 500;
       color: var(--text-secondary);
 
+      @media (max-width: 640px) {
+        font-size: 0.8rem;
+      }
+
       svg {
         color: var(--brand-primary);
         font-size: 0.8rem;
@@ -134,6 +159,11 @@ $warning: #f59e0b;
       font-family: inherit;
       transition: border-color 0.2s ease, box-shadow 0.2s ease;
 
+      @media (max-width: 640px) {
+        font-size: 16px;
+        padding: 9px 12px;
+      }
+
       &:focus {
         outline: none;
         border-color: var(--brand-primary);
@@ -144,7 +174,7 @@ $warning: #f59e0b;
 
     &--error input {
       border-color: $danger;
-      background: rgba(239, 68, 68, 0.06);
+      background: var(--accent-danger-soft);
     }
   }
 
@@ -318,6 +348,15 @@ $warning: #f59e0b;
   }
 
   // ---------- Members ----------
+  // Name + phone inputs sit side by side, wrapping the Add button to a
+  // new line on narrow widths.
+  &__add-grid {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: stretch;
+    gap: 8px;
+  }
+
   &__add {
     display: flex;
     align-items: center;
@@ -327,6 +366,14 @@ $warning: #f59e0b;
     border: 1px solid var(--border-color);
     border-radius: 10px;
     transition: border-color 0.2s ease, box-shadow 0.2s ease;
+
+    &--name {
+      flex: 2 1 160px;
+    }
+
+    &--phone {
+      flex: 1 1 130px;
+    }
 
     &:focus-within {
       border-color: var(--brand-primary);
@@ -348,31 +395,60 @@ $warning: #f59e0b;
       color: var(--text-primary);
       font-family: inherit;
 
+      @media (max-width: 640px) {
+        font-size: 16px;
+      }
+
       &:focus {
         outline: none;
       }
     }
 
-    button {
-      padding: 8px 14px;
-      background: var(--brand-primary);
-      color: white;
-      border: none;
-      border-radius: 8px;
-      font-size: 0.83rem;
-      font-weight: 600;
-      cursor: pointer;
-      font-family: inherit;
-      transition: background 0.2s ease, opacity 0.2s ease;
+  }
 
-      &:hover:not(:disabled) {
-        background: var(--brand-hover);
-      }
+  &__add-btn {
+    flex: 0 0 auto;
+    padding: 8px 18px;
+    background: var(--brand-primary);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.83rem;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    transition: background 0.2s ease, opacity 0.2s ease;
 
-      &:disabled {
-        opacity: 0.45;
-        cursor: not-allowed;
-      }
+    @media (max-width: 640px) {
+      padding: 11px 16px;
+      font-size: 0.9rem;
+      min-height: 44px;
+    }
+
+    &:hover:not(:disabled) {
+      background: var(--brand-hover);
+    }
+
+    &:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+  }
+
+  &__add-hint {
+    display: flex;
+    align-items: flex-start;
+    gap: 7px;
+    margin: 9px 2px 0;
+    font-size: 0.78rem;
+    line-height: 1.4;
+    color: var(--text-tertiary);
+
+    svg {
+      color: var(--brand-primary);
+      font-size: 0.82rem;
+      margin-top: 1px;
+      flex-shrink: 0;
     }
   }
 
@@ -397,8 +473,20 @@ $warning: #f59e0b;
 
   &__member-name {
     flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
     font-size: 0.9rem;
     color: var(--text-primary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &__member-phone {
+    font-size: 0.74rem;
+    color: var(--text-tertiary);
+    font-weight: 500;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -419,10 +507,15 @@ $warning: #f59e0b;
     transition: background 0.18s ease, color 0.18s ease,
       border-color 0.18s ease;
 
+    @media (max-width: 640px) {
+      width: 40px;
+      height: 40px;
+    }
+
     &:hover {
-      background: rgba(239, 68, 68, 0.1);
+      background: var(--accent-danger-soft);
       color: $danger;
-      border-color: rgba(239, 68, 68, 0.3);
+      border-color: var(--accent-danger-ring);
     }
   }
 
@@ -517,8 +610,17 @@ $warning: #f59e0b;
     border-top: 1px solid var(--border-light);
     background: var(--bg-card);
 
-    @media (max-width: 420px) {
-      flex-direction: column-reverse;
+    @media (max-width: 640px) {
+      position: sticky;
+      bottom: 0;
+      z-index: 2;
+      padding: 16px;
+    }
+
+    // Keep Close + Save on one row even on narrow phones; they split the
+    // width evenly (flex: 1) and shrink rather than stacking.
+    @media (max-width: 380px) {
+      gap: 8px;
     }
   }
 
@@ -535,6 +637,19 @@ $warning: #f59e0b;
     font-family: inherit;
     cursor: pointer;
     transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+
+    @media (max-width: 640px) {
+      padding: 11px 16px;
+      font-size: 0.9rem;
+      min-height: 44px;
+      white-space: nowrap;
+    }
+
+    @media (max-width: 380px) {
+      padding: 11px 10px;
+      font-size: 0.84rem;
+      gap: 6px;
+    }
 
     &:disabled {
       opacity: 0.55;

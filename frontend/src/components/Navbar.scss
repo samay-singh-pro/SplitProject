@@ -1,207 +1,120 @@
+// ---------- Top navbar (lean) ----------
+// Shown on every route. Density adapts to auth + scroll position.
+
 .navbar {
+  position: sticky;
+  top: 0;
+  z-index: 100;
   display: flex;
-  padding: 10px 50px;
-  background-color: var(--bg-primary);
-  border-bottom: 1px solid var(--border-color);
-  
-  @media (max-width: 850px) {
-    padding: 10px 25px;
-  }
-  
-  &__logo {
-    flex: 1;
-    
-    img {
-      height: 40px;
-      transition: all 0.3s ease;
-      
-      &:hover {
-        transform: scale(1.05);
-      }
-    }
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px clamp(16px, 4vw, 36px);
+  background: var(--bg-primary);
+  border-bottom: 1px solid transparent;
+  transition: background 0.2s ease, border-color 0.2s ease,
+    box-shadow 0.2s ease;
+  backdrop-filter: blur(8px);
+
+  &--scrolled {
+    background: color-mix(in srgb, var(--bg-primary) 88%, transparent);
+    border-bottom-color: var(--border-color);
+    box-shadow: var(--shadow-sm);
   }
 
-  &__links {
-    display: flex;
-    flex: 2;
+  &__brand {
+    display: inline-flex;
     align-items: center;
-    justify-content: center;
-    @media (max-width: 1080px) {
-      flex: 3;
-    }
-    @media (max-width: 850px) {
-      display: none;
+    gap: 8px;
+
+    .brandMark {
+      font-size: 1.45rem;
+      transition: transform 0.2s ease;
     }
 
-    ul {
-      align-items: center;
-      justify-content: center;
-      display: flex;
-      flex-direction: row;
-      gap: 30px;
-      font-size: 22px;
-      font-weight: 500;
-      @media (max-width: 1080px) {
-        gap: 15px;
-      }
-      
-      a {
-        color: var(--text-primary);
-        transition: color 0.3s ease;
-        
-        &:hover {
-          color: var(--brand-primary);
-        }
-      }
+    &:hover .brandMark {
+      transform: scale(1.04);
     }
   }
 
   &__actions {
-    display: flex;
-    flex: 1;
+    display: inline-flex;
     align-items: center;
-    justify-content: flex-end;
-    gap: 15px;
+    gap: 8px;
+  }
 
-    @media (max-width: 850px) {
-      display: none;
+  &__link {
+    padding: 8px 14px;
+    border-radius: 10px;
+    font-size: 0.92rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    transition: background 0.18s ease, color 0.18s ease;
+
+    &:hover {
+      background: var(--bg-secondary);
+      color: var(--text-primary);
     }
   }
 
-  &__login {
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
+  &__cta {
+    padding: 9px 18px;
+    border-radius: 10px;
+    font-size: 0.92rem;
+    font-weight: 700;
+    color: white;
+    background: var(--brand-primary);
+    transition: background 0.18s ease, transform 0.15s ease;
 
-    button {
-      height: 40px;
-      width: 100px;
-      color: white;
-      border-radius: 5px;
-      font-size: 18px;
-      background-color: var(--brand-secondary);
-      transition: background-color 0.3s ease;
-      
-      &:hover {
-        background-color: var(--brand-hover);
+    &:hover {
+      background: var(--brand-hover);
+    }
+
+    &:active {
+      transform: translateY(1px);
+    }
+  }
+
+  &__logout {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 8px 14px;
+    border-radius: 10px;
+    background: transparent;
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    font-size: 0.88rem;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    transition: border-color 0.18s ease, color 0.18s ease, background 0.18s ease;
+
+    svg {
+      font-size: 0.85rem;
+    }
+
+    &:hover {
+      border-color: var(--brand-primary);
+      color: var(--brand-primary);
+      background: rgba(110, 26, 110, 0.06);
+    }
+
+    @media (max-width: 540px) {
+      span {
+        display: none;
       }
-      
-      a {
-        color: white;
-      }
+      padding: 8px 10px;
     }
   }
 }
 
-// Invert logo colors in dark mode
-[data-theme='dark'] {
-  .navbar__logo img {
-    filter: invert(1) hue-rotate(180deg);
+// Hide the top Navbar on desktop dashboard — the SideNav rail carries
+// theme + logout itself. On mobile dashboard (≤850px) the SideNav is a
+// bottom tab bar with no room for those, so the Navbar stays visible.
+@media (min-width: 851px) {
+  .navbar--on-dashboard {
+    display: none;
   }
 }
 
-.stylish-border {
-  position: relative;
-  padding-bottom: 20px;
-}
-
-.stylish-border::after {
-  content: "";
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  width: 100%;
-  height: 2px;
-  background: linear-gradient(to right, transparent, var(--brand-primary), transparent);
-  border-radius: 0 0 15px 15px;
-}
-
-.side-menu {
-  height: 100%;
-  width: 0;
-  position: fixed;
-  top: 0;
-  left: 0;
-  background-color: var(--bg-card);
-  box-shadow: var(--shadow-lg);
-  overflow-x: hidden;
-  transition: width 0.3s ease-in-out;
-  padding-top: 60px;
-  z-index: 9999;
-}
-
-.side-menu .title {
-  margin-left: 20px;
-  font-weight: 600;
-  margin-bottom: 40px;
-  font-size: 25px;
-  color: var(--brand-primary);
-}
-
-.side-menu ul {
-  margin-left: 20px;
-  list-style-type: none;
-  padding: 0;
-}
-
-.side-menu li {
-  color: var(--text-primary);
-  display: flex;
-  align-items: center;
-  
-  .icon {
-    font-size: 25px;
-    color: rgb(250, 64, 64);
-  }
-  .home {
-    color: var(--accent-green);
-  }
-  .about {
-    color: var(--brand-primary);
-  }
-  .contact {
-    color: rgb(135, 206, 235);
-  }
-  .logout {
-    color: var(--accent-green);
-  }
-  .dash {
-    color: rgb(199, 199, 3);
-  }
-  .offer {
-    color: var(--accent-pink);
-  }
-}
-
-.side-menu a {
-  padding: 10px 15px;
-  font-size: 20px;
-  display: block;
-  transition: 0.3s;
-  color: var(--text-primary);
-  
-  &:hover {
-    color: var(--brand-primary);
-  }
-}
-
-.menu-icon {
-  font-size: 30px;
-  cursor: pointer;
-  display: none;
-  color: var(--text-primary);
-}
-
-@media (max-width: 850px) {
-  .menu-icon {
-    display: block;
-  }
-
-  .side-menu.open {
-    width: 300px;
-  }
-
-  .side-menu.closed {
-    width: 0;
-  }
-}
