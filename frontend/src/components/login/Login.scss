@@ -5,7 +5,11 @@
 $brand-soft: rgba(110, 26, 110, 0.08);
 
 .authPage {
+  // dvh tracks the *visible* viewport on mobile (vh includes the area
+  // behind the address bar, which made the form taller than the screen
+  // and cropped it). vh is the fallback for older browsers.
   min-height: calc(100vh - 68px);
+  min-height: calc(100dvh - 68px);
   display: grid;
   grid-template-columns: 1fr 1fr;
   background: var(--bg-primary);
@@ -540,6 +544,11 @@ $brand-soft: rgba(110, 26, 110, 0.08);
     }
 
     &__form-pane {
+      // Top-align (not center) on phones: a tall form — e.g. signup —
+      // centered in a viewport-height pane has its top pushed off-screen
+      // and unreachable. Aligning to the start lets the page scroll
+      // naturally and keeps the heading below the navbar, never cropped.
+      align-items: flex-start;
       padding: 20px 16px 32px;
     }
 

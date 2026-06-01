@@ -7,7 +7,9 @@ $danger: var(--accent-danger);
 .groupsPage {
   position: relative;
   width: 100%;
-  min-height: 100vh;
+  // Fills the dashboard main via flexbox (see DashboardLayout.scss); no
+  // forced 100vh, so an empty "no groups yet" state doesn't force scroll.
+  min-height: 0;
   padding: clamp(16px, 4vw, 32px) clamp(12px, 4vw, 48px)
     clamp(28px, 8vw, 100px);
   color: var(--text-primary);

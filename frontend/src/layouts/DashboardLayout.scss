@@ -2,18 +2,41 @@
   display: flex;
   align-items: flex-start;
   min-height: 100vh;
+  min-height: 100dvh;
 
   &__main {
     flex: 1;
+    align-self: stretch;
     min-width: 0;
+    // Host the routed screen as a flex child so it fills exactly the
+    // available space. Previously each screen forced its own
+    // `min-height: 100vh`, which — stacked under the in-flow navbar and
+    // the tab-bar reserve below — overflowed the viewport and made every
+    // screen scroll even when nearly empty.
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+  }
+
+  // The screen fills the main area and only grows (→ the page scrolls)
+  // when its own content genuinely exceeds the viewport. border-box keeps
+  // the screen's padding (and the tab-bar reserve) inside this height.
+  &__main > * {
+    flex: 1 1 auto;
+    min-height: 0;
+    box-sizing: border-box;
   }
 
   // Mobile / tablet: the SideNav is a fixed bottom tab bar, so the
   // dashboard collapses to a single column and we reserve space at the
   // bottom of the main content so the tab bar never covers content.
   // 84px accounts for the actual tab bar height (icon + label + padding).
+  // The top navbar is in normal flow here (~68px), so subtract it so the
+  // dashboard is exactly one screen tall and doesn't force scroll.
   @media (max-width: 850px) {
     flex-direction: column;
+    min-height: calc(100vh - 68px);
+    min-height: calc(100dvh - 68px);
 
     &__main {
       width: 100%;
