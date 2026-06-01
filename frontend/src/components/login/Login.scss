@@ -18,6 +18,22 @@ $brand-soft: rgba(110, 26, 110, 0.08);
     grid-template-columns: 1fr;
   }
 
+  // Grid/flex blow-out guard. Every level of the form chain defaults to
+  // `min-width: auto`, so none of them may shrink below their content's
+  // min-content. A flex column (`__form`) reports an inflated min-content,
+  // which forced the single `1fr` grid track WIDER than the viewport on
+  // phones (e.g. a 440px column inside a 370px screen) — the form then
+  // overflowed right and got clipped by the mobile `overflow-x: hidden`,
+  // cropping the inputs/eye-icon with no scrollbar. Allowing every level
+  // to shrink collapses the track back to the viewport width.
+  &__form-pane,
+  &__form-wrap,
+  &__form,
+  &__field,
+  &__input {
+    min-width: 0;
+  }
+
   // -------- Form pane --------
   &__form-pane {
     display: flex;

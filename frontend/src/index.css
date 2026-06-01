@@ -103,6 +103,17 @@ body {
   }
 }
 
+/* Border-box everywhere: width/height include padding + border, so
+   `width: 100%` + padding never overflows. Without this, full-width
+   elements with padding (e.g. the auth submit button at ≤640px) became
+   wider than the viewport and got clipped on the right by the mobile
+   `overflow-x: hidden` safety net — cropping inputs/buttons on phones. */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
 /* Global transitions for theme switching */
 *,
 *::before,
