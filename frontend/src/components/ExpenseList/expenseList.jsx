@@ -426,7 +426,8 @@ const ExpenseListPage = () => {
                 onClick={handleConfirmDelete}
                 disabled={deleting}
               >
-                <FaTrash /> {deleting ? "Deleting…" : "Delete"}
+                {deleting ? <span className="btn-spinner" /> : <FaTrash />}{" "}
+                {deleting ? "Deleting…" : "Delete"}
               </button>
             </div>
           </div>

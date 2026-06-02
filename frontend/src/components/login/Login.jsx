@@ -163,7 +163,9 @@ const Login = () => {
               disabled={!canSubmit}
             >
               {loading ? (
-                "Signing in…"
+                <>
+                  <span className="btn-spinner" /> Signing in…
+                </>
               ) : (
                 <>
                   Sign in <FaArrowRight />

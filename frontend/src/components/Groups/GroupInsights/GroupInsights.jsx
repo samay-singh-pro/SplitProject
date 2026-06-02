@@ -58,11 +58,14 @@ const GroupInsights = ({ group, open, onClose, onNavigate }) => {
     (m) => m.linkedUserId?.toString() === myId && !m.removed
   );
   const handleIncludeMe = () => {
-    if (group?._id) dispatch(includeMe(group._id));
+    if (!group?._id) return;
+    setIncluding(true);
+    dispatch(includeMe(group._id)).finally(() => setIncluding(false));
   };
   const [editOpen, setEditOpen] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [including, setIncluding] = useState(false);
   // Collapsible sections — settlements open by default (it's the action
   // item), balances collapsed (secondary info, can grow long).
   const [balancesOpen, setBalancesOpen] = useState(false);
@@ -381,9 +384,10 @@ const GroupInsights = ({ group, open, onClose, onNavigate }) => {
                     type="button"
                     className="groupIns__manage-btn"
                     onClick={handleIncludeMe}
+                    disabled={including}
                     title="Add yourself so your spending here shows in Personal"
                   >
-                    <FaUserPlus /> Include me
+                    <FaUserPlus /> {including ? "Adding…" : "Include me"}
                   </button>
                 )}
                 <button
@@ -465,7 +469,13 @@ const GroupInsights = ({ group, open, onClose, onNavigate }) => {
                 onClick={handleDelete}
                 disabled={deleting}
               >
-                {deleting ? "Deleting…" : "Yes, delete"}
+                {deleting ? (
+                  <>
+                    <span className="btn-spinner" /> Deleting…
+                  </>
+                ) : (
+                  "Yes, delete"
+                )}
               </button>
             </div>
           </div>

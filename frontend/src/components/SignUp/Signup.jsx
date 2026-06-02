@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import "../login/Login.scss";
 import { Link, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
+import { toast } from "react-toastify";
 import { signupUser, resetState } from "../../store/signupSlice.js";
 import {
   FaEnvelope,
@@ -88,6 +89,7 @@ const Signup = () => {
   // success beat is shown inline before navigating.
   useEffect(() => {
     if (success) {
+      toast.success("Signup successful — logging you in…");
       const t = setTimeout(() => {
         navigate("/dashboard");
         dispatch(resetState());
@@ -106,20 +108,11 @@ const Signup = () => {
             <p>Track shared spends with your people in under a minute.</p>
           </header>
 
-          {/* Inline banner — replaces floating toast for success + errors. */}
-          {(success || error) && (
-            <div
-              className={`authPage__alert ${
-                success ? "authPage__alert--info" : "authPage__alert--error"
-              }`}
-              role="alert"
-            >
-              {success ? <FaCheckCircle /> : <FaExclamationCircle />}
-              <span>
-                {success
-                  ? "Account created — taking you to sign in…"
-                  : error}
-              </span>
+          {/* Errors stay inline next to the form; success is a toast. */}
+          {error && (
+            <div className="authPage__alert authPage__alert--error" role="alert">
+              <FaExclamationCircle />
+              <span>{error}</span>
             </div>
           )}
 
@@ -246,7 +239,9 @@ const Signup = () => {
               disabled={!canSubmit}
             >
               {loading ? (
-                "Creating account…"
+                <>
+                  <span className="btn-spinner" /> Creating account…
+                </>
               ) : (
                 <>
                   Create account <FaArrowRight />

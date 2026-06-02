@@ -64,6 +64,7 @@ const EditGroupModal = ({ open, group, onClose }) => {
   const [newMemberEmail, setNewMemberEmail] = useState("");
   const [adding, setAdding] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [removingId, setRemovingId] = useState(null);
   const [memberError, setMemberError] = useState("");
   const [fieldErrors, setFieldErrors] = useState({});
 
@@ -181,9 +182,11 @@ const EditGroupModal = ({ open, group, onClose }) => {
 
   const handleRemoveMember = async (member) => {
     setMemberError("");
+    setRemovingId(member._id);
     const result = await dispatch(
       removeGroupMember({ groupId: group._id, memberId: member._id })
     );
+    setRemovingId(null);
 
     if (result.type.endsWith("/fulfilled")) {
       // success — group is updated in store via reducer
@@ -401,7 +404,13 @@ const EditGroupModal = ({ open, group, onClose }) => {
                 onClick={handleAddMember}
                 disabled={!newMemberName.trim() || adding}
               >
-                {adding ? "Adding…" : "Add"}
+                {adding ? (
+                  <>
+                    <span className="btn-spinner" /> Adding…
+                  </>
+                ) : (
+                  "Add"
+                )}
               </button>
             </div>
 
@@ -436,6 +445,7 @@ const EditGroupModal = ({ open, group, onClose }) => {
                     type="button"
                     className="editGroup__member-remove"
                     onClick={() => handleRemoveMember(m)}
+                    disabled={removingId === m._id}
                     aria-label={`Remove ${m.name}`}
                     title="Remove member"
                   >
@@ -485,7 +495,9 @@ const EditGroupModal = ({ open, group, onClose }) => {
             disabled={saving}
           >
             {saving ? (
-              "Saving…"
+              <>
+                <span className="btn-spinner" /> Saving…
+              </>
             ) : (
               <>
                 <FaCheck /> Save changes

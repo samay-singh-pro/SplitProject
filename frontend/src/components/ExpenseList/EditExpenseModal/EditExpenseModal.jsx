@@ -623,7 +623,8 @@ const EditExpenseModal = ({ open, onClose, expense, group }) => {
             className="ng-btn ng-btn--primary"
             disabled={saving}
           >
-            <FaCheck /> {saving ? "Saving…" : "Save changes"}
+            {saving ? <span className="btn-spinner" /> : <FaCheck />}{" "}
+            {saving ? "Saving…" : "Save changes"}
           </button>
         </div>
       </form>

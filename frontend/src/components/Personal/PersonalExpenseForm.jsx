@@ -191,7 +191,8 @@ const PersonalExpenseForm = ({ symbol = "₹", expense = null, onDone }) => {
         className="ng-btn ng-btn--primary pf__submit"
         disabled={saving}
       >
-        <FaCheck /> {saving ? "Saving…" : editing ? "Save changes" : "Add expense"}
+        {saving ? <span className="btn-spinner" /> : <FaCheck />}{" "}
+        {saving ? "Saving…" : editing ? "Save changes" : "Add expense"}
       </button>
     </form>
   );

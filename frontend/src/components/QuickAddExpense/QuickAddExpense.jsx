@@ -364,7 +364,13 @@ const QuickAddExpense = ({ open, onClose, group }) => {
           className="quickAdd__submit"
           disabled={loading}
         >
-          {loading ? "Saving..." : "Save expense"}
+          {loading ? (
+            <>
+              <span className="btn-spinner" /> Saving...
+            </>
+          ) : (
+            "Save expense"
+          )}
         </button>
       </form>
     </div>

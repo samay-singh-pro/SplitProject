@@ -87,6 +87,7 @@ const Expenses = () => {
   const [payer, setPayer] = useState("");
   const [beneficiary, setBeneficiary] = useState("");
   const [settleAmount, setSettleAmount] = useState("");
+  const [settleSaving, setSettleSaving] = useState(false);
   const [quickAddOpen, setQuickAddOpen] = useState(false);
   const [expandedMember, setExpandedMember] = useState(null);
   // Two views only: "simplified" (greedy minimum-transaction set, the
@@ -481,19 +482,22 @@ const Expenses = () => {
       ],
       splitType: "unequally",
     };
-    dispatch(addExpense(expenseData)).then((action) => {
-      if (action.meta.requestStatus === "fulfilled") {
-        closeSettle();
-        dispatch(fetchGroupStats(selectedGroup));
-        dispatch(getAllExpenses(selectedGroup));
-      } else {
-        // e.g. a member trying to settle a pair they're not part of —
-        // the server rejects it; surface that instead of silently closing.
-        toast.error(
-          action.payload?.message || "Couldn't record this settlement."
-        );
-      }
-    });
+    setSettleSaving(true);
+    dispatch(addExpense(expenseData))
+      .then((action) => {
+        if (action.meta.requestStatus === "fulfilled") {
+          closeSettle();
+          dispatch(fetchGroupStats(selectedGroup));
+          dispatch(getAllExpenses(selectedGroup));
+        } else {
+          // e.g. a member trying to settle a pair they're not part of —
+          // the server rejects it; surface that instead of silently closing.
+          toast.error(
+            action.payload?.message || "Couldn't record this settlement."
+          );
+        }
+      })
+      .finally(() => setSettleSaving(false));
   };
 
   // ---------- Render ----------
@@ -1071,8 +1075,13 @@ const Expenses = () => {
               >
                 Cancel
               </button>
-              <button type="submit" className="ng-btn ng-btn--primary">
-                <FaCheckCircle /> Settle
+              <button
+                type="submit"
+                className="ng-btn ng-btn--primary"
+                disabled={settleSaving}
+              >
+                {settleSaving ? <span className="btn-spinner" /> : <FaCheckCircle />}{" "}
+                {settleSaving ? "Settling…" : "Settle"}
               </button>
             </div>
           </form>

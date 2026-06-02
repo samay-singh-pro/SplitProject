@@ -89,6 +89,7 @@ const AddSplit = () => {
   const [categoryAuto, setCategoryAuto] = useState(true);
   const [showCategoryPicker, setShowCategoryPicker] = useState(false);
   const [splitType, setSplitType] = useState("equally");
+  const [saving, setSaving] = useState(false);
   const [unequalSplits, setUnequalSplits] = useState({});
   const [percentageSplits, setPercentageSplits] = useState({});
   const [errors, setErrors] = useState({});
@@ -231,9 +232,14 @@ const AddSplit = () => {
       expenseData.splitDetails = splitAmong.map((id) => ({ member: id }));
     }
 
-    dispatch(addExpense(expenseData)).then(() => {
-      resetForm();
-    });
+    setSaving(true);
+    dispatch(addExpense(expenseData))
+      .then((action) => {
+        // Only clear the form on success so a failed save keeps the
+        // user's input instead of silently wiping it.
+        if (action.meta?.requestStatus === "fulfilled") resetForm();
+      })
+      .finally(() => setSaving(false));
   };
 
   // Wipe all fields back to their initial state. Used both after a
@@ -737,8 +743,13 @@ const AddSplit = () => {
             >
               Reset
             </button>
-            <button type="submit" className="ng-btn ng-btn--primary">
-              <FaCheck /> Save expense
+            <button
+              type="submit"
+              className="ng-btn ng-btn--primary"
+              disabled={saving}
+            >
+              {saving ? <span className="btn-spinner" /> : <FaCheck />}{" "}
+              {saving ? "Saving…" : "Save expense"}
             </button>
           </div>
         </form>
